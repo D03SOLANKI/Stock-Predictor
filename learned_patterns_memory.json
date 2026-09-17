@@ -1,7 +1,7 @@
 {
   "midcap": {
-    "total_gainer_cases": 0,
-    "track_b_cases": 0,
+    "total_gainer_cases": 909,
+    "track_b_cases": 14,
     "archetypes": {
       "CLEAN_AIR_VOLATILITY_SQUEEZE": {
         "hits": 6,
@@ -31,8 +31,8 @@
     "learned_insights": []
   },
   "smallcap": {
-    "total_gainer_cases": 0,
-    "track_b_cases": 0,
+    "total_gainer_cases": 676,
+    "track_b_cases": 7,
     "archetypes": {
       "EXPLOSIVE_VCP_BREAKOUT": {
         "hits": 9,
