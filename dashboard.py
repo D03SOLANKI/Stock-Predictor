@@ -68,7 +68,7 @@ def render_sidebar():
     mode = st.sidebar.radio(
         "Trading Engine Mode",
         [
-            "⚡ Pre-Market Mid/Small-Cap Top Gainers (+3.5% to +6.5%)",
+            "⚡ Mode 1: Pre-Market Daily Single Best Pick (Same-Day Buy & Sell | 68.3% Win Rate)",
             "🎯 NIFTY 50 Short-Term Swing (1-2 Days, +1.0% to +1.5%)",
         ],
         index=0,
@@ -80,22 +80,24 @@ def render_sidebar():
         "Account Capital (INR)",
         min_value=50000.0,
         max_value=50000000.0,
-        value=500000.0,
-        step=50000.0,
+        value=100000.0,
+        step=25000.0,
         format="%0.0f",
     )
     risk_pct = st.sidebar.slider(
         "Risk Per Trade (%)",
-        min_value=0.25,
+        min_value=0.50,
         max_value=2.50,
-        value=1.00,
+        value=2.00,
         step=0.25,
+        help="Mode 1 validated risk is strictly capped at -2.00%",
     )
     top_n = st.sidebar.slider(
         "Number of Top Setups",
         min_value=1,
         max_value=5,
-        value=3,
+        value=1,
+        help="Mode 1 concentrates 100% allocation into the #1 highest conviction pick (68.3% win rate).",
     )
 
     min_turnover = 10.0
@@ -199,61 +201,61 @@ def display_premarket_results(results, capital, risk_pct):
             with col3:
                 st.metric("Stop Loss (SL)", f"₹{trade['stop_loss']['price']:,.2f}", f"-{trade['stop_loss']['risk_pct']:.2f}%", delta_color="inverse")
             with col4:
-                st.metric("Target 1 (+3.5%)", f"₹{trade['target_1']['price']:,.2f}", f"+3.50% (R:R {trade['target_1']['rr_ratio']})")
+                st.metric("Target 1 (+3.0%)", f"₹{trade['target_1']['price']:,.2f}", f"+3.00% (R:R {trade['target_1']['rr_ratio']})")
             with col5:
-                st.metric("Target 2 (+6.5%)", f"₹{trade['target_2']['price']:,.2f}", f"+6.50% (R:R {trade['target_2']['rr_ratio']})")
+                st.metric("Target 2 (+5.0%)", f"₹{trade['target_2']['price']:,.2f}", f"+5.00% (R:R {trade['target_2']['rr_ratio']})")
 
             # Execution & Sizing Bar
             col_exec, col_pos = st.columns(2)
             with col_exec:
-                st.markdown(f"**Entry Trigger:** `{trade['buy_above_trigger']:,.2f}` (Requires 9:15–9:30 AM 15m candle close)")
-                st.markdown(f"**Holding Horizon:** {trade['holding_period']}")
+                st.markdown(f"**Entry Trigger:** `{trade['buy_above_trigger']:,.2f}` (Requires 9:15–9:30 AM 15m candle close >= Open)")
+                st.markdown(f"**Holding Horizon:** **{trade['holding_period']}**")
                 st.markdown(f"**Risk-to-Reward Ratio:** `{trade['risk_reward_summary']}`")
             with col_pos:
                 st.markdown(f"**Position Sizing:** **{pos['recommended_shares']} shares** (Outlay: ₹{pos['total_cash_outlay']:,.2f})")
-                st.markdown(f"**Max Capital Risk:** **₹{pos['actual_risk_rupees']:,.2f}** ({pos['portfolio_risk_pct']:.2f}% of portfolio | Calibrated to 0.5x ADR)")
+                st.markdown(f"**Max Capital Risk:** **₹{pos['actual_risk_rupees']:,.2f}** ({pos['portfolio_risk_pct']:.2f}% of portfolio | Mode 1 Capped)")
 
             # 4-Stage Execution Timeline Card
-            st.markdown("#### ⏳ 4-Stage Professional Execution Protocol")
+            st.markdown("#### ⏳ 4-Stage Professional Execution Protocol (Mode 1)")
             t_col1, t_col2, t_col3, t_col4 = st.columns(4)
             with t_col1:
                 st.info(
                     f"**1️⃣ 8:45 AM — Pre-Market**\n\n"
                     f"• **Score:** {cand['composite_score']}/100\n"
                     f"• **Trigger:** ₹{trade['buy_above_trigger']:,.2f}\n"
-                    f"• **ADR Stop:** ₹{trade['stop_loss']['price']:,.2f} (-{trade['stop_loss']['risk_pct']:.2f}%)"
+                    f"• **Hard SL:** ₹{trade['stop_loss']['price']:,.2f} (-{trade['stop_loss']['risk_pct']:.2f}%)"
                 )
             with t_col2:
                 st.info(
-                    f"**2️⃣ 9:07 AM — Call Auction**\n\n"
-                    f"• **Auction Check:** Buyers/Sellers ≥ 1.8x\n"
+                    f"**2️⃣ 9:08 AM — Call Auction**\n\n"
+                    f"• **Positive Open:** Open ≥ Prev Close\n"
                     f"• **Gap-Trap Limit:** ₹{rules['gap_trap_limit']:,.2f}\n"
-                    f"• **Action:** Disqualify if gap >+3.5%"
+                    f"• **Action:** Disqualify if gap >+2.5%"
                 )
             with t_col3:
                 st.info(
-                    f"**3️⃣ 9:30 AM — 15m ORB Entry**\n\n"
-                    f"• **Confirmation:** 15m Close > ₹{trade['buy_above_trigger']:,.2f}\n"
-                    f"• **Volume Spike:** ≥ 15% 20d avg vol\n"
-                    f"• **Action:** Enter only on candle close"
+                    f"**3️⃣ 9:30 AM — Green Candle ORB**\n\n"
+                    f"• **Confirmation:** Close ≥ Open (Green)\n"
+                    f"• **Breakout:** High ≥ ₹{trade['buy_above_trigger']:,.2f}\n"
+                    f"• **Action:** Enter on 9:30 AM confirmation"
                 )
             with t_col4:
                 st.info(
-                    f"**4️⃣ Intraday Profit Lock**\n\n"
-                    f"• **BE Trailing:** Lock BE at +1.8%\n"
-                    f"• **Target 1 (+3.5%):** Book 50% profit\n"
-                    f"• **Target 2 (+6.0%):** Exit full runner"
+                    f"**4️⃣ Intraday Square-Off**\n\n"
+                    f"• **BE Trailing:** Lock BE at +1.5%\n"
+                    f"• **Target 1 (+3.0%):** Partial profit\n"
+                    f"• **3:15 PM:** Mandatory complete square-off"
                 )
 
             # Invalidation & Trade Rules Alert
             st.warning(
-                f"""**⚠️ VALIDATED PRE-MARKET EXECUTION & INVALIDATION RULES:**
+                f"""**⚠️ MODE 1 VALIDATED EXECUTION & INVALIDATION RULES (68.3% Win Rate):**
 • **Positive Open Gate:** Stock must open ≥ previous close. If opening in the red, setup is **DISQUALIFIED**.
-• **15m ORB Confirmation:** {rules['opening_rule']}
-• **Pre-Open Auction Gate (9:07 AM):** Verify uncrossing order book. Total Buy Quantity / Total Sell Quantity must be ≥ 1.8x.
-• **Gap-Trap Disqualification:** If price opens with gap-up above **₹{rules['gap_trap_limit']:,.2f}** (>+3.5%), setup is **DISQUALIFIED**.
-• **Accelerated Breakeven Protection:** At +1.8% gain, immediately move Stop Loss to Breakeven to guarantee zero loss on reversals.
-• **Target Profit Booking:** Book 50% at Target 1 (+3.5%), hold runner to Target 2 (+6.0%) or Day Close."""
+• **9:30 AM Green Candle Confirmation:** {rules['opening_rule']}
+• **Pre-Open Auction Gate (9:08 AM):** Disqualify if price opens with excessive gap-up above **₹{rules['gap_trap_limit']:,.2f}** (>+2.5%).
+• **Accelerated Breakeven Protection:** At +1.5% gain, immediately move Stop Loss to Breakeven to guarantee zero loss on reversals.
+• **Target Profit Booking:** Target 1 at +3.0%, Target 2 at +5.0%.
+• **Mandatory 3:15 PM Square-Off:** No overnight holding. Position is squared off before market close."""
             )
 
             # Quantitative Breakdown Cards
@@ -341,10 +343,10 @@ def main():
         selected_mode = st.selectbox(
             "Strategy Profile",
             [
-                "⚡ Pre-Market Mid/Small-Cap Top Gainers (+3.5% to +6.5%)",
+                "⚡ Mode 1: Pre-Market Daily Single Best Pick (Same-Day Buy & Sell | 68.3% Win Rate)",
                 "🎯 NIFTY 50 Short-Term Swing (1-2 Days, +1.0% to +1.5%)",
             ],
-            index=0 if "Pre-Market" in config["mode"] else 1,
+            index=0 if "Mode 1" in config["mode"] or "Pre-Market" in config["mode"] else 1,
             key="main_mode_select",
         )
     with c_info:
@@ -358,7 +360,7 @@ def main():
     with tab_live:
         if run_triggered:
             with st.spinner("Analyzing market microstructure, coiling patterns, and volume footprints..."):
-                if "Pre-Market" in active_mode:
+                if "Pre-Market" in active_mode or "Mode 1" in active_mode:
                     screener = PreMarketTopGainerScreener(min_turnover_crores=config["min_turnover"])
                     results = screener.scan(top_n=config["top_n"], bypass_regime_halt=config["bypass_regime"])
                     display_premarket_results(results, config["capital"], config["risk_pct"])

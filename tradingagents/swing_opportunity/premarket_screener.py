@@ -38,9 +38,9 @@ class PreMarketTopGainerScreener:
         self,
         tickers: Optional[List[str]] = None,
         benchmark_ticker: str = "NIFTYMIDCAP150.NS",
-        min_turnover_crores: float = 15.0,  # Upgraded from ₹10 Cr to ₹15 Cr
+        min_turnover_crores: float = 10.0,  # Mode 1 Validated Universe Floor (₹10 Cr)
         min_price: float = 30.0,
-        max_dist_52w_pct: float = 8.0,      # Strict 52w high proximity gate
+        max_dist_52w_pct: float = 15.0,     # Mode 1 Proximity Gate (<= 15.0% to 52w high)
     ):
         self.tickers = tickers or NSE_MID_SMALL_TICKERS
         self.benchmark_ticker = benchmark_ticker
@@ -219,17 +219,11 @@ class PreMarketTopGainerScreener:
                 msg = "Disqualified: Stock closed locked in upper circuit yesterday."
                 return (False, msg, gate_details) if return_details else (False, msg)
 
-        # Gate 6: Long-Term Trend (Price > 200 SMA & Price > 50 SMA)
-        if len(close) >= 200:
-            sma200 = float(close.tail(200).mean())
-            if curr_close < sma200:
-                msg = f"Disqualified: Price ₹{curr_close:.2f} below 200 SMA ₹{sma200:.2f} (Lagging Basement)"
-                return (False, msg, gate_details) if return_details else (False, msg)
-
-        if len(close) >= 50:
-            sma50 = float(close.tail(50).mean())
-            if curr_close < sma50:
-                msg = f"Disqualified: Price ₹{curr_close:.2f} below 50 SMA ₹{sma50:.2f}"
+        # Gate 6: Active Intraday / Medium-Term Trend Gate
+        if len(close) >= 20:
+            ema20 = float(close.ewm(span=20, adjust=False).mean().iloc[-1])
+            if curr_close < ema20:
+                msg = f"Disqualified: Price ₹{curr_close:.2f} below 20 EMA ₹{ema20:.2f} (Active Intraday Trend Lost)"
                 return (False, msg, gate_details) if return_details else (False, msg)
 
         # Gate 7: 52-Week High Proximity (<= 8.0%)

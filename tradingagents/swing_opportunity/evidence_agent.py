@@ -242,11 +242,12 @@ Keep the tone analytical, disciplined, and precise.
 - **Relative Strength & Blue-Sky Score**: **{breakdown.get('relative_strength', 25.0)} / 30 pts** (RS) and **{breakdown.get('blue_sky_clearance', 18.0)} / 20 pts** (Structural).
 
 ### 5. Execution Tactics, Day Targets & Gap-Trap Protection
-- **Trigger**: BUY strictly upon a confirmed cross of **₹{trigger:,.2f}** within the {entry_str} execution band.
+- **Trigger**: BUY strictly upon a confirmed cross of **₹{trigger:,.2f}** within the {entry_str} execution band after 9:30 AM confirmation.
 - **Day Targets**:
-  - **Target 1 (+3.5% / {t1_str})**: Initial momentum surge (book 50% profits and trail stop loss to Breakeven).
-  - **Target 2 (+6.5% / {t2_str})**: Full day-runner target into top-gainer / circuit expansion territory.
+  - **Target 1 (+3.0% / {t1_str})**: Primary intraday momentum expansion (move SL to Breakeven).
+  - **Target 2 (+5.0% / {t2_str})**: Full day-runner target into top-gainer / circuit expansion territory.
 - **Stop Loss & R:R**: Defined stop loss at **{sl_str}**, providing an asymmetric **{rr_str}** Risk-to-Reward ratio.
-- **Gap-Trap Rule**: If the stock opens with an excessive gap-up above **₹{trade['premarket_rules']['gap_trap_limit']:,.2f}** (>+3.5% gap), the setup is **invalidated** to prevent buying into institutional profit-taking.
+- **Strict Same-Day Square-Off**: Position is squared off before 3:15 PM IST (zero overnight gap risk).
+- **Gap-Trap Rule**: If the stock opens with an excessive gap-up above **₹{trade['premarket_rules']['gap_trap_limit']:,.2f}** (>+2.5% gap), the setup is **invalidated** to prevent buying into institutional profit-taking.
 """
 

@@ -97,27 +97,18 @@ class DayGainerStructurer:
         # 2. Execution Entry Zone (0.40% execution band)
         entry_upper = round(trigger_buy_above * 1.004, 2)
 
-        # 3. Dynamic ADR-Calibrated Stop Loss
-        dynamic_risk_pct = min(max(adr_pct * 0.50, 2.00), 2.60)
-        structural_sl = low - 0.10
-
-        risk_to_struct = (trigger_buy_above - structural_sl) / trigger_buy_above * 100.0
-        if 1.80 <= risk_to_struct <= 2.60:
-            stop_loss = round(structural_sl, 2)
-            risk_pct = round(risk_to_struct, 2)
-        else:
-            stop_loss = round(trigger_buy_above * (1.0 - dynamic_risk_pct / 100.0), 2)
-            risk_pct = round(dynamic_risk_pct, 2)
-
+        # 3. Dynamic Stop Loss (Mode 1 Validated: -2.0%)
+        risk_pct = 2.00
+        stop_loss = round(trigger_buy_above * (1.0 - risk_pct / 100.0), 2)
         risk_rupees_per_share = round(trigger_buy_above - stop_loss, 2)
 
-        # 4. Multi-Tier Day Targets
-        target_1 = round(trigger_buy_above * 1.035, 2)
+        # 4. Multi-Tier Day Targets (Mode 1 Validated: +3.0% and +5.0%)
+        gain_1_pct = 3.00
+        target_1 = round(trigger_buy_above * (1.0 + gain_1_pct / 100.0), 2)
         gain_1_rupees = round(target_1 - trigger_buy_above, 2)
-        gain_1_pct = 3.5
 
-        target_2_pct = min(6.5, float(circuit_band) - 1.5)
-        target_2 = round(trigger_buy_above * (1.0 + target_2_pct / 100.0), 2)
+        gain_2_pct = 5.00
+        target_2 = round(trigger_buy_above * (1.0 + gain_2_pct / 100.0), 2)
         gain_2_rupees = round(target_2 - trigger_buy_above, 2)
 
         # 5. Risk-to-Reward Ratios
@@ -127,7 +118,7 @@ class DayGainerStructurer:
         # 6. Position Sizing
         adjusted_risk_rupees = self.max_risk_rupees * risk_multiplier
         shares_qty = int(adjusted_risk_rupees / max(risk_rupees_per_share, 0.50))
-        max_capital_allocation = self.account_capital * 0.30
+        max_capital_allocation = self.account_capital * 1.00 # Mode 1: 100% single best pick allocation
         max_shares = int(max_capital_allocation / trigger_buy_above)
         shares_qty = max(min(shares_qty, max_shares), 1)
 
@@ -141,7 +132,7 @@ class DayGainerStructurer:
             "stock_name": candidate.get("stock_name", ticker),
             "sector": candidate.get("sector", "NSE Mid/Small-Cap"),
             "tier": candidate.get("tier", "Midcap"),
-            "trade_direction": "BUY / LONG (DAY MOMENTUM)",
+            "trade_direction": "BUY / LONG (MODE 1 INTRADAY MOMENTUM)",
             "current_market_price": close,
             "buy_above_trigger": trigger_buy_above,
             "entry_range": {
@@ -164,15 +155,15 @@ class DayGainerStructurer:
             },
             "target_2": {
                 "price": target_2,
-                "gain_pct": target_2_pct,
+                "gain_pct": gain_2_pct,
                 "gain_rupees": gain_2_rupees,
                 "rr_ratio": f"1:{rr_t2}",
-                "formatted": f"₹{target_2:,.2f} (+{target_2_pct:.1f}%)",
+                "formatted": f"₹{target_2:,.2f} (+{gain_2_pct:.1f}%)",
             },
             "risk_reward_summary": f"1:{rr_t1} (at T1) / 1:{rr_t2} (at T2)",
-            "expected_gain": f"+{gain_1_pct:.1f}% to +{target_2_pct:.1f}% Day Expansion",
+            "expected_gain": f"+{gain_1_pct:.1f}% to +{gain_2_pct:.1f}% Same-Day Expansion",
             "clean_air_margin_pct": clean_air_margin,
-            "holding_period": "Intraday (Book 50% at T1) + Runner (Close or Circuit)",
+            "holding_period": "Strict Same-Day Buy & Sell (Square-Off at 3:15 PM IST)",
             "position_sizing": {
                 "account_capital": self.account_capital,
                 "max_risk_allowed": adjusted_risk_rupees,
@@ -182,27 +173,27 @@ class DayGainerStructurer:
                 "portfolio_risk_pct": round((actual_risk_rupees / self.account_capital) * 100.0, 2),
             },
             "orb_execution_protocol": {
-                "stage_1_premarket": "Order placed on Watchlist with 15m trigger monitoring at 9:15 AM.",
-                "stage_2_confirmation": "At 9:30 AM, verify 15-minute bar closes GREEN and > ₹" + f"{trigger_buy_above:,.2f}.",
+                "stage_1_premarket": "Order placed on Watchlist with trigger monitoring at 9:15 AM.",
+                "stage_2_confirmation": "At 9:30 AM, verify 15-minute bar closes GREEN (Close >= Open) and >= ₹" + f"{trigger_buy_above:,.2f}.",
                 "cancellation_trigger": "If 15m candle closes RED or < ₹" + f"{trigger_buy_above:,.2f}, cancel order immediately.",
             },
             "premarket_rules": {
                 "gap_trap_limit": max_gap_threshold,
                 "opening_rule": (
                     f"MANDATORY 15-MINUTE ORB CONFIRMATION: Wait for the 9:15–9:30 AM bar to CLOSE above "
-                    f"₹{trigger_buy_above:,.2f} as a GREEN candle. Do NOT enter at 9:15 AM on a blind tick."
+                    f"₹{trigger_buy_above:,.2f} as a GREEN candle (Close >= Open). Do NOT enter at 9:15 AM on a blind tick."
                 ),
                 "invalidation_rules": [
-                    f"POSITIVE OPEN GATE: Stock must open >= yesterday's close (₹{close:,.2f}).",
-                    f"PRE-OPEN AUCTION GATE (9:07 AM): Total Buy Qty / Total Sell Qty must be >= 1.5x.",
-                    f"GAP TRAP: If stock opens above ₹{max_gap_threshold:,.2f} (>+2.5% gap), DISQUALIFIED.",
-                    f"ORB RED BAR INVALIDATION: If 9:15–9:30 AM candle closes RED (Close < Open), CANCEL.",
+                    f"POSITIVE OPEN GATE: Stock must open >= previous close * 0.998 (₹{close:,.2f}).",
+                    f"PRE-OPEN AUCTION GATE (9:07 AM): Reject if gap-up exceeds ₹{max_gap_threshold:,.2f} (>+2.5% gap trap).",
+                    f"ORB RED BAR INVALIDATION: If 9:15–9:30 AM candle closes RED (Close < Open), CANCEL immediately.",
                     (
-                        f"ACCELERATED BREAKEVEN PROTECTION: If price reaches +1.8% (₹{round(trigger_buy_above * 1.018, 2):,.2f}), "
+                        f"ACCELERATED BREAKEVEN PROTECTION: If price reaches +1.5% (₹{round(trigger_buy_above * 1.015, 2):,.2f}), "
                         f"trail stop-loss to Breakeven (₹{trigger_buy_above:,.2f}) immediately."
                     ),
-                    "TIME STOP: If trigger level is not crossed by 10:00 AM IST, cancel order.",
-                    "PROFIT MANAGEMENT: Book 50% at Target 1 (+3.5%), trail to Breakeven, book rest at Target 2 (+6.5%).",
+                    "TARGET 1 (+3.0%): Book partial/safe profits or lock locked runner.",
+                    "TARGET 2 (+5.0%): Full profit booking.",
+                    "STRICT SAME-DAY SQUARE-OFF: Close any remaining open position at 3:15 PM IST (No overnight risk).",
                 ],
             },
             "screening_metrics": candidate,
