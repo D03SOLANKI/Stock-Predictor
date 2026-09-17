@@ -122,14 +122,13 @@ DEFAULT_CONFIG = _apply_env_overrides({
     "news_article_limit": 20,             # max articles per ticker (ticker-news)
     "global_news_article_limit": 10,      # max articles for global/macro news
     "global_news_lookback_days": 7,       # macro news lookback window
-    # Search queries used by get_global_news for macro headlines. Extend or
-    # replace to broaden geographic / sector coverage.
+    # Search queries used by get_global_news for macro headlines.
     "global_news_queries": [
-        "Federal Reserve interest rates inflation",
-        "S&P 500 earnings GDP economic outlook",
+        "Reserve Bank of India RBI repo rate inflation",
+        "NIFTY 50 earnings GDP economic outlook India",
         "geopolitical risk trade war sanctions",
-        "ECB Bank of England BOJ central bank policy",
-        "oil commodities supply chain energy",
+        "crude oil commodities rupee energy import",
+        "Indian economy macroeconomic policy",
     ],
     # Data vendor configuration
     # Category-level configuration (default for all tools in category).
@@ -149,12 +148,8 @@ DEFAULT_CONFIG = _apply_env_overrides({
         # Example: "get_stock_data": "alpha_vantage",  # Override category default
     },
     # Benchmark for alpha calculation in the reflection layer.
-    # ``benchmark_ticker`` (when set) overrides the suffix map for all
-    # tickers; leave it None to use ``benchmark_map`` for auto-detection
-    # based on the ticker's exchange suffix. SPY remains the US default
-    # so the reflection label keeps reading "Alpha vs SPY" for US tickers
-    # while non-US tickers get their regional index automatically.
-    "benchmark_ticker": None,
+    # Defaults to ^NSEI (NIFTY 50) for the NSE (India) market.
+    "benchmark_ticker": os.getenv("TRADINGAGENTS_BENCHMARK_TICKER", "^NSEI"),
     "benchmark_map": {
         ".NS":  "^NSEI",       # NSE India (Nifty 50)
         ".BO":  "^BSESN",      # BSE India (Sensex)
@@ -165,6 +160,6 @@ DEFAULT_CONFIG = _apply_env_overrides({
         ".AX":  "^AXJO",       # Australia (ASX 200)
         ".SS":  "000001.SS",   # Shanghai (SSE Composite)
         ".SZ":  "399001.SZ",   # Shenzhen (SZSE Component)
-        "":     "SPY",         # default for US-listed tickers (no suffix)
+        "":     "^NSEI",       # default for NSE India
     },
 })

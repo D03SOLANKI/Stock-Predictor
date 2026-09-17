@@ -11,7 +11,7 @@ from tradingagents.llm_clients.model_catalog import get_model_options
 
 console = Console()
 
-TICKER_INPUT_EXAMPLES = "SPY, 0700.HK, BTC-USD"
+TICKER_INPUT_EXAMPLES = "RELIANCE.NS, TCS.NS, HDFCBANK.NS, INFY.NS"
 
 ANALYST_ORDER = [
     ("Market Analyst", AnalystType.MARKET),
@@ -24,28 +24,34 @@ CRYPTO_SUFFIXES = ("-USD", "-USDT", "-USDC", "-BTC", "-ETH")
 
 
 def is_valid_ticker_input(value: str) -> bool:
-    """Whether a ticker entry is acceptable (charset + length).
+    """Whether a ticker entry is acceptable for NSE (India).
 
-    Allows the characters Yahoo symbols use, including ``=`` for futures/forex
-    like ``GC=F`` and ``EURUSD=X`` (#980), and ``^`` for indices. Empty input is
-    allowed (it defaults to SPY downstream).
+    Restricted to NSE symbols ending in ``.NS`` (case-insensitive).
+    Empty input is allowed (it defaults to RELIANCE.NS downstream).
     """
     v = value.strip()
-    return not v or (all(ch.isalnum() or ch in "._-^=" for ch in v) and len(v) <= 32)
+    if not v:
+        return True
+    return (
+        v.upper().endswith(".NS")
+        and len(v) > 3
+        and len(v) <= 32
+        and all(ch.isalnum() or ch in "._-^=" for ch in v)
+    )
 
 
 def get_ticker() -> str:
-    """Prompt the user to enter a ticker symbol, preserving exchange suffixes.
+    """Prompt the user to enter an NSE ticker symbol ending in .NS.
 
     Uses questionary.text (not typer.prompt, which strips trailing dot-suffixes
-    like ``000404.SH`` on some shells) and validates the symbol charset so an
-    obvious typo is caught before the run starts.
+    like ``.NS`` on some shells) and validates the symbol charset and .NS suffix
+    so errors are caught before the run starts.
     """
     ticker = questionary.text(
         f"Enter ticker symbol (e.g. {TICKER_INPUT_EXAMPLES}):",
         validate=lambda x: (
             is_valid_ticker_input(x)
-            or "Please enter a valid ticker symbol, e.g. AAPL, 000404.SZ, 0700.HK, GC=F."
+            or "Please enter a valid NSE ticker symbol ending in .NS, e.g. RELIANCE.NS, TCS.NS, INFY.NS."
         ),
         style=questionary.Style(
             [
@@ -59,7 +65,7 @@ def get_ticker() -> str:
         console.print("\n[red]No ticker symbol provided. Exiting...[/red]")
         exit(1)
 
-    return normalize_ticker_symbol(ticker) if ticker.strip() else "SPY"
+    return normalize_ticker_symbol(ticker) if ticker.strip() else "RELIANCE.NS"
 
 
 def normalize_ticker_symbol(ticker: str) -> str:

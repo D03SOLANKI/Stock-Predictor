@@ -1,0 +1,183 @@
+<USER_REQUEST>
+# TASK: Post-Backtest Error Analysis — Why the Screener Hit and Missed
+
+## Purpose and scope boundary
+
+The walk-forward backtest already established the system's precision (8.05% vs 4.40%
+baseline) and PnL. **This task does not re-run or re-litigate that number.** This
+task explains *why* — what separates the hits from the misses, and what separates
+both from the moves this system structurally cannot catch. The output should be a
+diagnosis, not a new leaderboard.
+
+## Step 0 — Scope the sample (do not attempt "all days")
+
+Full causal reconstruction across 501 days × 97 stocks is not feasible at real
+fidelity and will produce shallow, templated write-ups if forced. Use this sample
+instead:
+
+1. **All 87 already-logged out-of-sample trades from the existing backtest** — these
+   are already PIT-clean and outcome-known. This is Tier 1 and mandatory.
+2. **A stratified random sample of 30 trading days** from the out-of-sample test
+   period (2026-03-19 to 2026-09-16), independent of the 87 trades above. For each
+   sampled day, pull the actual top gainers (+5% or more) in the 97-stock universe
+   that the screener did **not** flag as a candidate at all — these are the true
+   false negatives the backtest never scored, because the stock never entered the
+   candidate pool. This is Tier 2, also mandatory.
+3. If time/budget allows, expand Tier 2 to more days — state the final sample size
+   used and why, so the result's statistical weight is honest and stated up front.
+
+Do not silently shrink the sample without saying so. If a full 30-day Tier 2 sample
+isn't completed, report the actual number analyzed and flag the report as partial.
+
+## Step 1 — Hindsight-bias control (read before researching any "actual reason")
+
+When researching why a stock actually moved, the researcher already knows it moved
+— this creates strong pressure to find a satisfying story even where none exists.
+Guard against this explicitly:
+
+- **Add a mandatory category: "No identifiable catalyst — mechanics unclear."** Many
+  small-cap moves are driven by low float, block deals with delayed disclosure,
+  operator activity, or noise. Do not force these into "sector momentum" or
+  "technical breakout" because that sounds more rigorous than admitting no clean
+  cause was found.
+- For every "actual reason" claim, cite a **specific, timestamped, sourced fact**
+  (an exchange announcement, a dated news article, a disclosed block deal) — not a
+  post-hoc inference like "the stock was probably reacting to sector strength."
+  If no such sourced fact exists, use the "unclear" category. Do not fill the gap
+  with a plausible guess.
+- State explicitly, for every stock analyzed, whether the "actual reason" research
+  was done with knowledge of the outcome (it necessarily was) and flag any claim
+  that could not be independently verified against a dated source.
+
+## Step 2 — Data source audit for this analysis (before running it)
+
+State explicitly, for each of these, what source is used and what its coverage
+limitations are — the same discipline the backtest applied to its 15 criteria:
+
+| Input needed | Source used | Pre-market timestamp available? | Historical coverage confirmed for this universe/period? |
+|---|---|---|---|
+| News/catalyst | | | |
+| Corporate actions / exchange filings | | | |
+| Pre-market movement (9:00–9:15 AM) | | | |
+| Previous-day momentum, volume | | | |
+| Technical setup | | | |
+| Sector classification/momentum | | | |
+| Fundamentals/events | | | |
+
+Any row where coverage is unconfirmed or timestamps are unreliable must be marked
+as such, and any conclusion drawn from that row flagged as low-confidence.
+
+## Step 3 — Classify every stock into ONE of two tracks before analysis
+
+This separation is mandatory and must be decided **before** writing up "what the
+model missed," because lumping these together misattributes structural limitations
+to model weaknesses:
+
+- **Track A — News/event-driven movers.** The move was primarily caused by a
+  disclosed, dated, discoverable catalyst (results, order win, regulatory approval,
+  block deal, M&A) that occurred at or after market open, or was not public/knowable
+  before 9:15 AM. These are **structurally unpredictable** by a pre-market
+  technical/volume screener. Document them for completeness, but do not treat a miss
+  here as a model defect.
+- **Track B — Technical/flow-driven movers.** The setup (range compression, volume
+  dry-up, relative strength, pre-market gap behavior) was plausibly present in data
+  available before 9:15 AM. These are the **addressable gap** — misses here are
+  actionable and should drive the improvement recommendations.
+
+Report the split (e.g. "of N false negatives, X were Track A, Y were Track B") —
+this ratio alone is one of the most useful outputs of this entire exercise.
+
+## Step 4 — Per-stock write-up (Track A and Track B, both tiers)
+
+For every stock in the sample, in this format:
+
+```
+Date:
+Ticker:
+Actual move: (% gain, from what reference point, by when)
+Track: A (news/event) or B (technical/flow) or Unclear
+
+Actual reason for the move:
+  - [sourced, dated fact, or "No identifiable catalyst — mechanics unclear"]
+
+Was this stock in the screener's candidate pool that morning? Y/N
+If Y: predicted rank, score, what triggered/didn't trigger, actual outcome
+If N: which specific criteria (if any) it was close to passing, and which it
+      clearly failed, using only pre-9:15 AM data
+
+What the model got right (if anything):
+What the model missed (only meaningful for Track B):
+Confidence in the "actual reason" claim: High (sourced) / Low (inferred)
+```
+
+## Step 5 — Pattern analysis WITH a comparison group
+
+**Do not report "recurring characteristics of winners" without comparing against
+stocks that had similar setups and did NOT win.** A characteristic shared by 80% of
+winners is meaningless if it's also shared by 80% of non-winners that morning —
+that's just describing the universe, not finding signal.
+
+For each Tier 1 sample day, pull the 5-10 candidates the screener ranked highest
+that did **not** become top gainers, and compare them against the actual gainers on
+the same criteria. Report:
+
+- Which pre-market/technical features actually differ between winners and
+  same-day non-winning high-ranked candidates (this is the real signal).
+- Which features you expected to differ but didn't (this tells you which of the 15
+  criteria are decorative, consistent with the sensitivity analysis from the
+  backtest).
+
+## Step 6 — Model's implicit theory vs. what the comparison shows
+
+Lay out explicitly, side by side:
+
+```
+What the system's scoring implies causes a rise:
+  [derived from the weighted criteria and their weights]
+
+What the Track B comparison-group analysis actually shows precedes a rise:
+  [derived from Step 5, with sample size and confidence noted]
+
+Where they agree:
+Where they diverge:
+Magnitude of each divergence (is this a minor weighting issue or a criterion
+that should be dropped/added entirely?):
+```
+
+## Step 7 — Recommendations, each traceable to a specific finding
+
+Every recommendation must cite which finding above justifies it. No recommendation
+should appear without a Step 4-6 citation behind it. For each recommendation, state:
+- Expected effect (tighten precision, catch a specific missed pattern, reduce a
+  specific false-positive type)
+- Whether it should be validated on new out-of-sample data before adoption (it
+  should — say so explicitly and do not treat this analysis itself as validation,
+  since it's diagnostic, not a fresh backtest)
+
+## Required output summary
+
+1. Sample used (Tier 1 count, Tier 2 count/days, any shortfall from target)
+2. Data source audit table (Step 2)
+3. Track A vs Track B split, with counts
+4. Per-stock write-ups (Step 4) — full for Tier 1, full for Tier 2
+5. Comparison-group pattern analysis (Step 5)
+6. Implicit-theory-vs-actual-evidence comparison (Step 6)
+7. Recommendations, each traceable to a cited finding (Step 7)
+8. Explicit list of what remains unresolved or unverifiable, including any "No
+   identifiable catalyst" stocks and any data-source coverage gaps from Step 2
+
+## Hard rules
+
+- Prediction-side analysis uses only pre-9:15 AM data — no exceptions, per the
+  original backtest discipline.
+- "Actual reason" research must be sourced and dated, or explicitly marked unclear
+  — never inferred and presented as fact.
+- No pattern claim without a same-day comparison group.
+- No conflating Track A (unpredictable-by-design) misses with Track B (genuinely
+  addressable) misses in the recommendations.
+- Any recommendation arising from this analysis is a hypothesis for the next
+  backtest cycle, not a validated fix — say so explicitly in the output.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-09-16T21:48:06+05:30.
+</ADDITIONAL_METADATA>

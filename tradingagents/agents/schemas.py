@@ -46,7 +46,7 @@ def _coerce_optional_float(value):
     text = value.strip()
     if text.lower() in _NULLISH_FLOAT or text.endswith("%"):
         return None
-    cleaned = text.replace(",", "").lstrip("$€£¥").strip()
+    cleaned = text.replace(",", "").lstrip("₹$€£¥").strip()
     return cleaned or None
 
 

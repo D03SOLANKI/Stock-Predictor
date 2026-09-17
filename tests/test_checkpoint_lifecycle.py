@@ -65,7 +65,7 @@ def test_disabled_is_a_noop():
     with tempfile.TemporaryDirectory() as tmp:
         g = _bare_graph(tmp, enabled=False)
         plain = g.graph
-        assert g.begin_checkpoint("AAPL", "2026-05-08", "stock") is None
+        assert g.begin_checkpoint("RELIANCE.NS", "2026-05-08", "stock") is None
         assert g.graph is plain  # graph not recompiled
         g.end_checkpoint()  # safe no-op
 
@@ -75,7 +75,7 @@ def test_begin_returns_thread_id_and_recompiles():
     with tempfile.TemporaryDirectory() as tmp:
         g = _bare_graph(tmp)
         plain = g.graph
-        tid = g.begin_checkpoint("AAPL", "2026-05-08", "stock")
+        tid = g.begin_checkpoint("RELIANCE.NS", "2026-05-08", "stock")
         try:
             assert tid  # a real thread_id
             assert g.graph is not plain  # recompiled with a checkpointer
@@ -89,7 +89,7 @@ def test_checkpoint_input_is_none_only_when_resuming():
     global _should_crash
     with tempfile.TemporaryDirectory() as tmp:
         init = {"count": 0}
-        args = ("AAPL", "2026-05-08", "stock")
+        args = ("RELIANCE.NS", "2026-05-08", "stock")
         # Fresh run: no checkpoint yet -> stream the initial state, then crash.
         g1 = _bare_graph(tmp)
         tid = g1.begin_checkpoint(*args)
@@ -120,7 +120,7 @@ def test_checkpoint_input_is_none_only_when_resuming():
 def test_cli_style_usage_saves_then_resumes():
     global _should_crash
     with tempfile.TemporaryDirectory() as tmp:
-        cfg_args = ("AAPL", "2026-05-08", "stock")
+        cfg_args = ("RELIANCE.NS", "2026-05-08", "stock")
 
         # Run 1 (the CLI path): begin -> stream self.graph -> crash at 'trader'.
         _should_crash = True
@@ -137,7 +137,7 @@ def test_cli_style_usage_saves_then_resumes():
         # A checkpoint was saved for this run signature (so --checkpoint works).
 
         sig = g1._run_signature("stock")
-        assert checkpoint_step(tmp, "AAPL", "2026-05-08", sig) is not None
+        assert checkpoint_step(tmp, "RELIANCE.NS", "2026-05-08", sig) is not None
 
         # Run 2 (fresh graph, as a new CLI invocation): resume and finish.
         _should_crash = False
@@ -152,4 +152,4 @@ def test_cli_style_usage_saves_then_resumes():
             g2.end_checkpoint()
 
         # Cleared on success -> a later run starts fresh.
-        assert checkpoint_step(tmp, "AAPL", "2026-05-08", sig) is None
+        assert checkpoint_step(tmp, "RELIANCE.NS", "2026-05-08", sig) is None

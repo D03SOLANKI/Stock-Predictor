@@ -27,7 +27,11 @@
 
 ---
 
-# TradingAgents: Multi-Agents LLM Financial Trading Framework
+# TradingAgents (NSE India Edition)
+
+> ⚠️ **SEBI Regulatory Disclaimer**: This software is provided strictly for academic, educational, and quantitative research purposes. It does **NOT** constitute financial advice, investment recommendations, or SEBI-registered investment advisory services under the SEBI (Research Analysts) Regulations, 2014.
+>
+> 🇮🇳 **Market Restriction**: This fork is strictly restricted to the **National Stock Exchange of India (NSE)**. All tickers must end with `.NS` (e.g. `RELIANCE.NS`, `TCS.NS`, `HDFCBANK.NS`, `INFY.NS`). The reference benchmark is `^NSEI` (NIFTY 50).
 
 ## News
 - [2026-08] **TradingAgents v0.4.0** released with look-ahead / point-in-time fixes across FRED macro, social sentiment, and the decision-log memory; clearer decision signals; working CLI checkpoint resume; Trader price grounding; and the GPT-5.6 and GLM-5.3 models. See [CHANGELOG.md](CHANGELOG.md) for the full list.
@@ -170,15 +174,14 @@ python -m cli.main     # alternative: run directly from source
 ```
 You will see a screen where you can select your desired tickers, analysis date, LLM provider, research depth, and more.
 
-### Markets and tickers
+### Markets and Tickers (NSE India Only)
 
-TradingAgents works with any market Yahoo Finance covers, using the exchange-suffixed ticker. Company identity and the alpha benchmark resolve automatically per market.
+This fork is restricted exclusively to the **National Stock Exchange of India (NSE)** using `.NS` tickers.
 
-- US: `AAPL`, `SPY`
-- Hong Kong: `0700.HK` · Tokyo: `7203.T` · London: `AZN.L`
-- India: `RELIANCE.NS`, `.BO` · Canada: `.TO` · Australia: `.AX`
-- China A-shares: Shanghai `.SS`, Shenzhen `.SZ` (e.g. `600519.SS` for Kweichow Moutai)
-- Crypto: `BTC-USD`, `ETH-USD`
+- **Supported Tickers**: NSE equities ending in `.NS` (e.g. `RELIANCE.NS`, `TCS.NS`, `HDFCBANK.NS`, `INFY.NS`).
+- **Benchmark Index**: `^NSEI` (NIFTY 50) for alpha calculation and memory reflections.
+- **Market Hours**: 09:15–15:30 IST, Monday–Friday (`Asia/Kolkata`).
+- **Market Calendar Gap**: NSE trading holidays (e.g. Diwali Laxmi Pujan / Muhurat Trading, Holi, Independence Day) are irregular and cannot be derived from a generic calendar. Ensure your requested analysis dates reflect actual NSE trading sessions.
 
 <p align="center">
   <img src="assets/cli/cli_init.png" width="100%" style="display: inline-block; margin: 0 2%;">
@@ -211,7 +214,7 @@ from tradingagents.default_config import DEFAULT_CONFIG
 ta = TradingAgentsGraph(debug=True, config=DEFAULT_CONFIG.copy())
 
 # forward propagate
-_, decision = ta.propagate("NVDA", "2026-01-15")
+_, decision = ta.propagate("RELIANCE.NS", "2026-01-15")
 print(decision)
 ```
 
@@ -228,7 +231,7 @@ config["quick_think_llm"] = "gpt-5.6-luna" # Model for quick tasks
 config["max_debate_rounds"] = 2
 
 ta = TradingAgentsGraph(debug=True, config=config)
-_, decision = ta.propagate("NVDA", "2026-01-15")
+_, decision = ta.propagate("RELIANCE.NS", "2026-01-15")
 print(decision)
 ```
 
@@ -240,7 +243,7 @@ TradingAgents persists two kinds of state across runs.
 
 ### Decision log
 
-The decision log is always on. Each completed run appends its decision to `~/.tradingagents/memory/trading_memory.md`. On the next run for the same ticker, TradingAgents fetches the realised return (raw and alpha vs SPY), generates a one-paragraph reflection, and injects the most recent same-ticker decisions plus recent cross-ticker lessons into the Portfolio Manager prompt, so each analysis carries forward what worked and what didn't.
+The decision log is always on. Each completed run appends its decision to `~/.tradingagents/memory/trading_memory.md`. On the next run for the same ticker, TradingAgents fetches the realised return (raw and alpha vs ^NSEI), generates a one-paragraph reflection, and injects the most recent same-ticker decisions plus recent cross-ticker lessons into the Portfolio Manager prompt, so each analysis carries forward what worked and what didn't.
 
 Override the path with `TRADINGAGENTS_MEMORY_LOG_PATH`.
 
@@ -259,7 +262,7 @@ tradingagents analyze --clear-checkpoints    # reset before running
 config = DEFAULT_CONFIG.copy()
 config["checkpoint_enabled"] = True
 ta = TradingAgentsGraph(config=config)
-_, decision = ta.propagate("NVDA", "2026-01-15")
+_, decision = ta.propagate("RELIANCE.NS", "2026-01-15")
 ```
 
 ## Reproducibility

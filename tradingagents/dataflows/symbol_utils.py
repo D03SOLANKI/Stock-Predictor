@@ -141,3 +141,24 @@ def normalize_symbol(raw: str) -> str:
 def is_yahoo_safe(symbol: str) -> bool:
     """True when ``symbol`` only contains characters Yahoo symbols use."""
     return bool(symbol) and _YAHOO_SAFE.fullmatch(symbol) is not None
+
+
+def validate_nse_ticker(ticker: str) -> str:
+    """Validate that the ticker belongs to the National Stock Exchange of India (.NS).
+
+    TradingAgents is restricted to the NSE (India) market only.
+    Rejects any ticker that does not end with '.NS' (case-insensitive).
+    Returns the normalized uppercase ticker string.
+    """
+    if not isinstance(ticker, str) or not ticker.strip():
+        raise ValueError(
+            "Ticker symbol cannot be empty. TradingAgents is restricted to NSE (India) only. "
+            "Please provide a valid ticker ending in '.NS' (e.g. 'RELIANCE.NS', 'TCS.NS')."
+        )
+    cleaned = ticker.strip().upper()
+    if not cleaned.endswith(".NS") or len(cleaned) <= 3:
+        raise ValueError(
+            f"TradingAgents is restricted to NSE (India) only. Ticker must end with '.NS' "
+            f"(e.g. 'RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS'), got {ticker!r}."
+        )
+    return cleaned

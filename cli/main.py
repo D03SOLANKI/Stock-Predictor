@@ -549,8 +549,8 @@ def get_user_selections():
     console.print(
         create_question_box(
             "Step 1: Ticker Symbol",
-            "Enter the ticker, with exchange suffix when needed (e.g. SPY, 0700.HK, BTC-USD)",
-            "SPY",
+            "Enter the ticker symbol ending in .NS (e.g. RELIANCE.NS, TCS.NS, HDFCBANK.NS, INFY.NS)",
+            "RELIANCE.NS",
         )
     )
     selected_ticker = get_ticker()
@@ -1336,3 +1336,5 @@ def analyze(
 
 if __name__ == "__main__":
     app()
+
+

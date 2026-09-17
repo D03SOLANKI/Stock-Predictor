@@ -30,6 +30,7 @@ from tradingagents.agents.utils.agent_utils import (
 )
 from tradingagents.agents.utils.memory import TradingMemoryLog
 from tradingagents.dataflows.config import set_config
+from tradingagents.dataflows.symbol_utils import validate_nse_ticker
 from tradingagents.dataflows.utils import safe_ticker_component
 from tradingagents.default_config import DEFAULT_CONFIG
 from tradingagents.llm_clients import create_llm_client
@@ -268,11 +269,11 @@ class TradingAgentsGraph:
         for suffix, benchmark in benchmark_map.items():
             if suffix and ticker_upper.endswith(suffix.upper()):
                 return benchmark
-        return benchmark_map.get("", "SPY")
+        return benchmark_map.get("", "^NSEI")
 
     def _fetch_returns(
         self, ticker: str, trade_date: str, holding_days: int = 5,
-        benchmark: str = "SPY",
+        benchmark: str = "^NSEI",
     ) -> tuple[float | None, float | None, int | None, str | None]:
         """Fetch raw and alpha return for ticker over holding_days from trade_date.
 
@@ -417,6 +418,7 @@ class TradingAgentsGraph:
         ``tradingagents.agents.utils.rating.is_review`` before mapping it to the
         PortfolioRating enum.
         """
+        company_name = validate_nse_ticker(company_name)
         self.ticker = company_name
 
         # Resolve any pending memory-log entries for this ticker before the pipeline runs.
@@ -439,6 +441,7 @@ class TradingAgentsGraph:
         lived only inside ``propagate`` and the CLI streamed the checkpointer-less
         graph, making the flag a no-op.
         """
+        company_name = validate_nse_ticker(company_name)
         self._resuming = False
         if not self.config.get("checkpoint_enabled"):
             return None
@@ -544,7 +547,11 @@ class TradingAgentsGraph:
                     # when it changes (#1027); the trace/state merge is unchanged.
                     signature = (type(msg).__name__, getattr(msg, "content", None))
                     if signature != last_printed:
-                        msg.pretty_print()
+                        try:
+                            msg.pretty_print()
+                        except UnicodeEncodeError:
+                            encoding = sys.stdout.encoding or "utf-8"
+                            print(msg.pretty_repr().encode(encoding, errors="replace").decode(encoding, errors="replace"))
                         last_printed = signature
                     trace.append(chunk)
             # Streamed chunks are per-node deltas. Merge them so the returned

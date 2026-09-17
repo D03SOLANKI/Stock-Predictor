@@ -903,8 +903,8 @@ class TestLegacyRemoval:
         mock_graph._run_graph = functools.partial(
             TradingAgentsGraph._run_graph, mock_graph
         )
-        TradingAgentsGraph.propagate(mock_graph, "NVDA", "2026-01-10")
+        TradingAgentsGraph.propagate(mock_graph, "RELIANCE.NS", "2026-01-10")
         entries = mock_graph.memory_log.load_entries()
         assert len(entries) == 1
-        assert entries[0]["ticker"] == "NVDA"
+        assert entries[0]["ticker"] == "RELIANCE.NS"
         assert entries[0]["pending"] is True

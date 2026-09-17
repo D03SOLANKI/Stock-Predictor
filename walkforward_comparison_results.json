@@ -1,0 +1,60 @@
+{
+  "Baseline": {
+    "Train (In-Sample)": {
+      "trades": 43,
+      "wins": 13,
+      "losses": 30,
+      "win_rate": 30.2,
+      "profit_factor": 0.45,
+      "final_capital": 69855.44,
+      "net_return_pct": -30.14
+    },
+    "Validation": {
+      "trades": 26,
+      "wins": 10,
+      "losses": 16,
+      "win_rate": 38.5,
+      "profit_factor": 2.71,
+      "final_capital": 105721.38,
+      "net_return_pct": 5.72
+    },
+    "Out-of-Sample (Test)": {
+      "trades": 46,
+      "wins": 14,
+      "losses": 32,
+      "win_rate": 30.4,
+      "profit_factor": 0.47,
+      "final_capital": 66971.29,
+      "net_return_pct": -33.03
+    }
+  },
+  "Upgraded": {
+    "Train (In-Sample)": {
+      "trades": 25,
+      "wins": 14,
+      "losses": 11,
+      "win_rate": 56.0,
+      "profit_factor": 1.65,
+      "final_capital": 101476.6,
+      "net_return_pct": 1.48
+    },
+    "Validation": {
+      "trades": 13,
+      "wins": 8,
+      "losses": 5,
+      "win_rate": 61.5,
+      "profit_factor": 8.02,
+      "final_capital": 107065.84,
+      "net_return_pct": 7.07
+    },
+    "Out-of-Sample (Test)": {
+      "trades": 25,
+      "wins": 18,
+      "losses": 7,
+      "win_rate": 72.0,
+      "profit_factor": 4.05,
+      "final_capital": 120115.36,
+      "net_return_pct": 20.12
+    }
+  }
+}

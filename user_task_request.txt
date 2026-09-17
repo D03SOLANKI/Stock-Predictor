@@ -1,0 +1,84 @@
+<USER_REQUEST>
+# TASK: Post-Backtest Error Analysis — Why the Screener Hit and Missed
+
+## Purpose and scope boundary
+
+The walk-forward backtest already established the system's precision (8.05% vs 4.40%
+baseline) and PnL. **This task does not re-run or re-litigate that number.** This
+task explains *why* — what separates the hits from the misses, and what separates
+both from the moves this system structurally cannot catch. The output should be a
+diagnosis, not a new leaderboard.
+
+## Step 0 — Scope the sample (do not attempt "all days")
+
+Full causal reconstruction across 501 days × 97 stocks is not feasible at real
+fidelity and will produce shallow, templated write-ups if forced. Use this sample
+instead:
+
+1. **All 87 already-logged out-of-sample trades from the existing backtest** — these
+   are already PIT-clean and outcome-known. This is Tier 1 and mandatory.
+2. **A stratified random sample of 30 trading days** from the out-of-sample test
+   period (2026-03-19 to 2026-09-16), independent of the 87 trades above. For each
+   sampled day, pull the actual top gainers (+5% or more) in the 97-stock universe
+   that the screener did **not** flag as a candidate at all — these are the true
+   false negatives the backtest never scored, because the stock never entered the
+   candidate pool. This is Tier 2, also mandatory.
+3. If time/budget allows, expand Tier 2 to more days — state the final sample size
+   used and why, so the result's statistical weight is honest and stated up front.
+
+Do not silently shrink the sample without saying so. If a full 30-day Tier 2 sample
+isn't completed, report the actual number analyzed and flag the report as partial.
+
+## Step 1 — Hindsight-bias control (read before researching any "actual reason")
+
+When researching why a stock actually moved, the researcher already knows it moved
+— this creates strong pressure to find a satisfying story even where none exists.
+Guard against this explicitly:
+
+- **Add a mandatory category: "No identifiable c
+<truncated 4958 bytes>
+oted]
+
+Where they agree:
+Where they diverge:
+Magnitude of each divergence (is this a minor weighting issue or a criterion
+that should be dropped/added entirely?):
+```
+
+## Step 7 — Recommendations, each traceable to a specific finding
+
+Every recommendation must cite which finding above justifies it. No recommendation
+should appear without a Step 4-6 citation behind it. For each recommendation, state:
+- Expected effect (tighten precision, catch a specific missed pattern, reduce a
+  specific false-positive type)
+- Whether it should be validated on new out-of-sample data before adoption (it
+  should — say so explicitly and do not treat this analysis itself as validation,
+  since it's diagnostic, not a fresh backtest)
+
+## Required output summary
+
+1. Sample used (Tier 1 count, Tier 2 count/days, any shortfall from target)
+2. Data source audit table (Step 2)
+3. Track A vs Track B split, with counts
+4. Per-stock write-ups (Step 4) — full for Tier 1, full for Tier 2
+5. Comparison-group pattern analysis (Step 5)
+6. Implicit-theory-vs-actual-evidence comparison (Step 6)
+7. Recommendations, each traceable to a cited finding (Step 7)
+8. Explicit list of what remains unresolved or unverifiable, including any "No
+   identifiable catalyst" stocks and any data-source coverage gaps from Step 2
+
+## Hard rules
+
+- Prediction-side analysis uses only pre-9:15 AM data — no exceptions, per the
+  original backtest discipline.
+- "Actual reason" research must be sourced and dated, or explicitly marked unclear
+  — never inferred and presented as fact.
+- No pattern claim without a same-day comparison group.
+- No conflating Track A (unpredictable-by-design) misses with Track B (genuinely
+  addressable) misses in the recommendations.
+- Any recommendation arising from this analysis is a hypothesis for the next
+  backtest cycle, not a validated fix — say so explicitly in the output.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-09-16T21:48:06+05:30.
+</ADDITIONAL_METADATA>

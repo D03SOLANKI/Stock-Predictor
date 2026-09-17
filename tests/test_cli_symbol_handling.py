@@ -27,19 +27,38 @@ def test_normalize_symbol_crypto_and_passthrough(raw, expected):
     assert normalize_symbol(raw) == expected
 
 
-# --- #980: validation accepts Yahoo futures/forex symbols ---
+# --- NSE validation: validation accepts .NS symbols and rejects non-.NS ---
 @pytest.mark.parametrize("value,ok", [
-    ("GC=F", True),
-    ("EURUSD=X", True),
-    ("AAPL", True),
-    ("0700.HK", True),
-    ("^GSPC", True),
-    ("", True),                 # empty -> defaults to SPY downstream
+    ("RELIANCE.NS", True),
+    ("TCS.NS", True),
+    ("infy.ns", True),
+    ("", True),                 # empty -> defaults to RELIANCE.NS downstream
+    ("AAPL", False),            # non-NSE rejected
+    ("GC=F", False),            # commodity future rejected
+    ("0700.HK", False),         # HK stock rejected
     ("bad symbol!", False),     # space + '!' rejected
+    (".NS", False),             # empty ticker base rejected
     ("A" * 40, False),          # too long
 ])
 def test_ticker_input_validation(value, ok):
     assert is_valid_ticker_input(value) is ok
+
+
+def test_validate_nse_ticker():
+    from tradingagents.dataflows.symbol_utils import validate_nse_ticker
+
+    assert validate_nse_ticker("RELIANCE.NS") == "RELIANCE.NS"
+    assert validate_nse_ticker("tcs.ns") == "TCS.NS"
+    assert validate_nse_ticker("  infy.ns  ") == "INFY.NS"
+
+    with pytest.raises(ValueError, match="TradingAgents is restricted to NSE"):
+        validate_nse_ticker("AAPL")
+
+    with pytest.raises(ValueError, match="TradingAgents is restricted to NSE"):
+        validate_nse_ticker("BTC-USD")
+
+    with pytest.raises(ValueError, match="Ticker symbol cannot be empty"):
+        validate_nse_ticker("")
 
 
 # --- #981/#982: asset-type classified on the canonical symbol ---
