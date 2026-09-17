@@ -41,6 +41,9 @@ class PreMarketTopGainerScreener:
         min_turnover_crores: float = 10.0,  # Mode 1 Validated Universe Floor (₹10 Cr)
         min_price: float = 30.0,
         max_dist_52w_pct: float = 15.0,     # Mode 1 Proximity Gate (<= 15.0% to 52w high)
+        min_adr_pct: float = 2.2,           # Mode 1 ADR Mechanical Expansion Floor (>= 2.2%)
+        min_clv: float = 0.45,              # Mode 1 Close Location Value (Buyer Absorption >= 0.45)
+        max_5d_ret_pct: float = 10.0,       # Mode 1 Anti-Exhaustion Guardrail (5d Return <= 10.0%)
     ):
         self.tickers = tickers or NSE_MID_SMALL_TICKERS
         self.benchmark_ticker = benchmark_ticker
@@ -48,6 +51,9 @@ class PreMarketTopGainerScreener:
         self.min_turnover_rupees = min_turnover_crores * 10000000.0  # 1 Cr = 1,00,00,000 INR
         self.min_price = min_price
         self.max_dist_52w_pct = max_dist_52w_pct
+        self.min_adr_pct = min_adr_pct
+        self.min_clv = min_clv
+        self.max_5d_ret_pct = max_5d_ret_pct
         
         self.catalyst_agent = CorporateCatalystAgent()
         self.auction_agent = PreMarketAuctionAgent()
@@ -264,6 +270,28 @@ class PreMarketTopGainerScreener:
             msg = f"Disqualified: Trapped overhead resistance within {clean_air_margin:.2f}% (< 2.0% Clean Air gate)"
             return (False, msg, gate_details) if return_details else (False, msg)
 
+        # Gate 10: 14-Day ADR Expansion Floor (>= min_adr_pct)
+        adr14 = float(ranges.tail(14).mean()) if len(ranges) >= 14 else float(ranges.mean())
+        adr_pct = (adr14 / curr_close) * 100.0
+        gate_details["adr_pct"] = round(adr_pct, 2)
+        if adr_pct < self.min_adr_pct:
+            msg = f"Disqualified: 14-day ADR {adr_pct:.2f}% below {self.min_adr_pct:.2f}% mechanical expansion floor."
+            return (False, msg, gate_details) if return_details else (False, msg)
+
+        # Gate 11: Close Location Value (Buyer Absorption >= min_clv)
+        clv = (curr_close - curr_low) / (curr_high - curr_low + 1e-6)
+        gate_details["clv"] = round(clv, 2)
+        if clv < self.min_clv:
+            msg = f"Disqualified: Close Location Value {clv:.2f} below {self.min_clv:.2f} (weak buyer absorption)."
+            return (False, msg, gate_details) if return_details else (False, msg)
+
+        # Gate 12: Anti-Exhaustion Guardrail (5-Day Return <= max_5d_ret_pct)
+        ret_5d = float((curr_close / close.iloc[-6] - 1.0) * 100.0) if len(close) >= 6 else 0.0
+        gate_details["ret_5d"] = round(ret_5d, 2)
+        if ret_5d > self.max_5d_ret_pct:
+            msg = f"Disqualified: 5-day surge {ret_5d:.2f}% > {self.max_5d_ret_pct:.1f}% (overextended exhaustion risk)."
+            return (False, msg, gate_details) if return_details else (False, msg)
+
         return (True, "PASSED_ALL_GATES", gate_details) if return_details else (True, "PASSED_ALL_GATES")
 
     def score_candidate(
@@ -342,6 +370,9 @@ class PreMarketTopGainerScreener:
             "is_inside_day": gate_details.get("is_inside_day", False),
             "clean_air_margin_pct": clean_air_margin,
             "is_clean_air": gate_details.get("is_clean_air", True),
+            "clv": gate_details.get("clv", round((curr_close - curr_low) / (curr_high - curr_low + 1e-6), 2)),
+            "ret_5d": gate_details.get("ret_5d", 0.0),
+            "is_vdu": vol_ratio <= 0.80,
             "catalyst_type": cat_type,
             "catalyst_score": cat_score_raw,
             "catalyst_headline": cat_headline,
@@ -351,6 +382,10 @@ class PreMarketTopGainerScreener:
                 "rs_alpha_pts": round(rs_score, 1),
                 "catalyst_pts": round(catalyst_pts, 1),
                 "vdu_pts": round(vdu_pts, 1),
+                "volatility_coiling": round(vdu_pts * 3.0, 1),
+                "relative_strength": round(rs_score * 0.85, 1),
+                "volume_footprint": round(vdu_pts * 2.0, 1),
+                "blue_sky_clearance": round(clean_air_score * 0.57, 1),
             },
         }
 
