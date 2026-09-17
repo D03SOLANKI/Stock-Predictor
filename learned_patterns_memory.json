@@ -1,0 +1,64 @@
+{
+  "midcap": {
+    "total_gainer_cases": 0,
+    "track_b_cases": 0,
+    "archetypes": {
+      "CLEAN_AIR_VOLATILITY_SQUEEZE": {
+        "hits": 6,
+        "attempts": 81,
+        "confidence_weight": 0.2,
+        "description": "Clean air >= 2.5% + Vol ratio <= 0.70 + NR7/Inside"
+      },
+      "RELATIVE_STRENGTH_LEADER": {
+        "hits": 110,
+        "attempts": 757,
+        "confidence_weight": 0.2,
+        "description": "RS Alpha >= +5.0% + Near 52w <= 5.0% + Trend > 50 SMA"
+      },
+      "COILED_SPRING_50SMA_BOUNCE": {
+        "hits": 13,
+        "attempts": 55,
+        "confidence_weight": 0.23,
+        "description": "Price > 200 SMA + Pullback within 2% of 50 SMA + Inside day"
+      },
+      "BASEMENT_MOMENTUM_REVERSAL": {
+        "hits": 68,
+        "attempts": 459,
+        "confidence_weight": 0.2,
+        "description": "Deep under 50 SMA + extreme dry-up (often fails)"
+      }
+    },
+    "learned_insights": []
+  },
+  "smallcap": {
+    "total_gainer_cases": 0,
+    "track_b_cases": 0,
+    "archetypes": {
+      "EXPLOSIVE_VCP_BREAKOUT": {
+        "hits": 9,
+        "attempts": 30,
+        "confidence_weight": 0.52,
+        "description": "High ADR >= 4.0% + NR7 compression + Clean air >= 3.0%"
+      },
+      "FLOAT_CONSTRAINED_MOMENTUM": {
+        "hits": 97,
+        "attempts": 317,
+        "confidence_weight": 0.2,
+        "description": "Turnover >= 10 Cr + RS Alpha >= +8.0% + 52w high proximity <= 6%"
+      },
+      "HIGH_BETA_SECTOR_RUNNER": {
+        "hits": 94,
+        "attempts": 421,
+        "confidence_weight": 0.2,
+        "description": "Sector peer expansion + Price > 50 SMA + Volume dry-up"
+      },
+      "ILLIQUID_PUMP_TRAP": {
+        "hits": 129,
+        "attempts": 483,
+        "confidence_weight": 0.2,
+        "description": "Turnover < 10 Cr + erratic wicks (penalized)"
+      }
+    },
+    "learned_insights": []
+  }
+}
