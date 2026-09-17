@@ -1,0 +1,632 @@
+[
+  {
+    "date": "2025-07-08",
+    "ticker": "COFORGE.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": -1.15,
+    "capital": 98854.67
+  },
+  {
+    "date": "2025-07-15",
+    "ticker": "POLYCAB.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 0.69,
+    "capital": 99533.18
+  },
+  {
+    "date": "2025-07-28",
+    "ticker": "TORNTPHARM.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": -0.12,
+    "capital": 99416.86
+  },
+  {
+    "date": "2025-07-29",
+    "ticker": "TORNTPHARM.NS",
+    "status": "T1_HIT (+3%)",
+    "pnl_net_pct": 2.85,
+    "capital": 102250.24
+  },
+  {
+    "date": "2025-07-30",
+    "ticker": "NAVINFLUOR.NS",
+    "status": "STOPPED_OUT (-2%)",
+    "pnl_net_pct": -2.15,
+    "capital": 100051.86
+  },
+  {
+    "date": "2025-08-18",
+    "ticker": "INDIANB.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 0.21,
+    "capital": 100258.1
+  },
+  {
+    "date": "2025-09-02",
+    "ticker": "MANAPPURAM.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 1.61,
+    "capital": 101868.54
+  },
+  {
+    "date": "2025-09-03",
+    "ticker": "MANAPPURAM.NS",
+    "status": "T1_HIT (+3%)",
+    "pnl_net_pct": 2.85,
+    "capital": 104771.79
+  },
+  {
+    "date": "2025-09-04",
+    "ticker": "POLYCAB.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": -0.08,
+    "capital": 104683.25
+  },
+  {
+    "date": "2025-09-05",
+    "ticker": "MUTHOOTFIN.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": -0.15,
+    "capital": 104528.07
+  },
+  {
+    "date": "2025-09-08",
+    "ticker": "MUTHOOTFIN.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 0.65,
+    "capital": 105210.32
+  },
+  {
+    "date": "2025-09-09",
+    "ticker": "MUTHOOTFIN.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 0.05,
+    "capital": 105262.09
+  },
+  {
+    "date": "2025-09-29",
+    "ticker": "POONAWALLA.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 1.57,
+    "capital": 106919.06
+  },
+  {
+    "date": "2025-09-30",
+    "ticker": "INDIANB.NS",
+    "status": "T1_HIT (+3%)",
+    "pnl_net_pct": 2.85,
+    "capital": 109966.26
+  },
+  {
+    "date": "2025-10-01",
+    "ticker": "MUTHOOTFIN.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 0.6,
+    "capital": 110627.54
+  },
+  {
+    "date": "2025-10-03",
+    "ticker": "MUTHOOTFIN.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 0.38,
+    "capital": 111051.46
+  },
+  {
+    "date": "2025-10-06",
+    "ticker": "POONAWALLA.NS",
+    "status": "T2_HIT (+5%)",
+    "pnl_net_pct": 4.85,
+    "capital": 116437.46
+  },
+  {
+    "date": "2025-10-08",
+    "ticker": "MUTHOOTFIN.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": -0.09,
+    "capital": 116330.64
+  },
+  {
+    "date": "2025-10-20",
+    "ticker": "NAVINFLUOR.NS",
+    "status": "STOPPED_OUT (-2%)",
+    "pnl_net_pct": -2.15,
+    "capital": 113829.54
+  },
+  {
+    "date": "2025-10-23",
+    "ticker": "INDIANB.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 0.16,
+    "capital": 114011.21
+  },
+  {
+    "date": "2025-10-24",
+    "ticker": "MOTILALOFS.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": -0.05,
+    "capital": 113950.32
+  },
+  {
+    "date": "2025-10-27",
+    "ticker": "MOTILALOFS.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 1.08,
+    "capital": 115179.2
+  },
+  {
+    "date": "2025-10-28",
+    "ticker": "MOTILALOFS.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 2.22,
+    "capital": 117740.05
+  },
+  {
+    "date": "2025-11-03",
+    "ticker": "FEDERALBNK.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": -0.09,
+    "capital": 117632.77
+  },
+  {
+    "date": "2025-11-10",
+    "ticker": "BANKINDIA.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 0.12,
+    "capital": 117771.52
+  },
+  {
+    "date": "2025-11-14",
+    "ticker": "CANBK.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 0.48,
+    "capital": 118341.33
+  },
+  {
+    "date": "2025-11-17",
+    "ticker": "CANBK.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 1.57,
+    "capital": 120198.06
+  },
+  {
+    "date": "2025-11-18",
+    "ticker": "FEDERALBNK.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 1.62,
+    "capital": 122149.05
+  },
+  {
+    "date": "2025-11-25",
+    "ticker": "FEDERALBNK.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 1.64,
+    "capital": 124146.54
+  },
+  {
+    "date": "2025-11-26",
+    "ticker": "FEDERALBNK.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": -0.47,
+    "capital": 123559.69
+  },
+  {
+    "date": "2025-12-04",
+    "ticker": "MPHASIS.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 0.91,
+    "capital": 124683.83
+  },
+  {
+    "date": "2025-12-05",
+    "ticker": "MPHASIS.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 0.45,
+    "capital": 125242.1
+  },
+  {
+    "date": "2025-12-12",
+    "ticker": "MUTHOOTFIN.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 1.15,
+    "capital": 126687.46
+  },
+  {
+    "date": "2025-12-15",
+    "ticker": "FEDERALBNK.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 0.36,
+    "capital": 127145.51
+  },
+  {
+    "date": "2025-12-22",
+    "ticker": "HINDCOPPER.NS",
+    "status": "T1_HIT (+3%)",
+    "pnl_net_pct": 2.85,
+    "capital": 130769.15
+  },
+  {
+    "date": "2025-12-24",
+    "ticker": "MANAPPURAM.NS",
+    "status": "T2_HIT (+5%)",
+    "pnl_net_pct": 4.85,
+    "capital": 137111.46
+  },
+  {
+    "date": "2025-12-26",
+    "ticker": "MCX.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 0.83,
+    "capital": 138246.21
+  },
+  {
+    "date": "2025-12-31",
+    "ticker": "MAHABANK.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 1.49,
+    "capital": 140303.31
+  },
+  {
+    "date": "2026-01-02",
+    "ticker": "TORNTPHARM.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 0.31,
+    "capital": 140742.24
+  },
+  {
+    "date": "2026-01-06",
+    "ticker": "TORNTPHARM.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 0.69,
+    "capital": 141711.78
+  },
+  {
+    "date": "2026-01-14",
+    "ticker": "NATIONALUM.NS",
+    "status": "T1_HIT (+3%)",
+    "pnl_net_pct": 2.85,
+    "capital": 145750.56
+  },
+  {
+    "date": "2026-01-27",
+    "ticker": "NATIONALUM.NS",
+    "status": "STOPPED_OUT (-2%)",
+    "pnl_net_pct": -2.15,
+    "capital": 142616.93
+  },
+  {
+    "date": "2026-01-28",
+    "ticker": "NATIONALUM.NS",
+    "status": "T2_HIT (+5%)",
+    "pnl_net_pct": 4.85,
+    "capital": 149533.85
+  },
+  {
+    "date": "2026-02-04",
+    "ticker": "JINDALSTEL.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": -0.53,
+    "capital": 148735.31
+  },
+  {
+    "date": "2026-02-11",
+    "ticker": "KEI.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": -0.74,
+    "capital": 147627.84
+  },
+  {
+    "date": "2026-02-16",
+    "ticker": "TORNTPHARM.NS",
+    "status": "T1_HIT (+3%)",
+    "pnl_net_pct": 2.85,
+    "capital": 151835.23
+  },
+  {
+    "date": "2026-02-17",
+    "ticker": "JINDALSTEL.NS",
+    "status": "STOPPED_OUT (-2%)",
+    "pnl_net_pct": -2.15,
+    "capital": 148570.77
+  },
+  {
+    "date": "2026-02-24",
+    "ticker": "TORNTPHARM.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 1.43,
+    "capital": 150700.35
+  },
+  {
+    "date": "2026-02-25",
+    "ticker": "JINDALSTEL.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 1.83,
+    "capital": 153459.42
+  },
+  {
+    "date": "2026-02-26",
+    "ticker": "INDIANB.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": -0.13,
+    "capital": 153252.45
+  },
+  {
+    "date": "2026-03-05",
+    "ticker": "ASTRAL.NS",
+    "status": "STOPPED_OUT (-2%)",
+    "pnl_net_pct": -2.15,
+    "capital": 149957.52
+  },
+  {
+    "date": "2026-03-10",
+    "ticker": "AUROPHARMA.NS",
+    "status": "T1_HIT (+3%)",
+    "pnl_net_pct": 2.85,
+    "capital": 154231.31
+  },
+  {
+    "date": "2026-03-20",
+    "ticker": "AUROPHARMA.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 1.51,
+    "capital": 156561.79
+  },
+  {
+    "date": "2026-03-25",
+    "ticker": "IPCALAB.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 0.98,
+    "capital": 158091.73
+  },
+  {
+    "date": "2026-04-01",
+    "ticker": "AUROPHARMA.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 0.59,
+    "capital": 159029.43
+  },
+  {
+    "date": "2026-04-07",
+    "ticker": "NATIONALUM.NS",
+    "status": "STOPPED_OUT (-2%)",
+    "pnl_net_pct": -2.15,
+    "capital": 155610.3
+  },
+  {
+    "date": "2026-04-09",
+    "ticker": "NMDC.NS",
+    "status": "STOPPED_OUT (-2%)",
+    "pnl_net_pct": -2.15,
+    "capital": 152264.67
+  },
+  {
+    "date": "2026-04-10",
+    "ticker": "NMDC.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": -0.19,
+    "capital": 151982.6
+  },
+  {
+    "date": "2026-04-16",
+    "ticker": "NATIONALUM.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 0.37,
+    "capital": 152549.06
+  },
+  {
+    "date": "2026-04-27",
+    "ticker": "SAIL.NS",
+    "status": "T1_HIT (+3%)",
+    "pnl_net_pct": 2.85,
+    "capital": 156896.7
+  },
+  {
+    "date": "2026-04-29",
+    "ticker": "MCX.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 1.58,
+    "capital": 159368.66
+  },
+  {
+    "date": "2026-05-05",
+    "ticker": "BSE.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": -1.02,
+    "capital": 157749.5
+  },
+  {
+    "date": "2026-05-06",
+    "ticker": "TORNTPHARM.NS",
+    "status": "T1_HIT (+3%)",
+    "pnl_net_pct": 2.85,
+    "capital": 162245.36
+  },
+  {
+    "date": "2026-05-14",
+    "ticker": "MCX.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 2.02,
+    "capital": 165516.66
+  },
+  {
+    "date": "2026-05-19",
+    "ticker": "BSE.NS",
+    "status": "T1_HIT (+3%)",
+    "pnl_net_pct": 2.85,
+    "capital": 170233.89
+  },
+  {
+    "date": "2026-05-25",
+    "ticker": "POLYCAB.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 0.63,
+    "capital": 171304.69
+  },
+  {
+    "date": "2026-05-29",
+    "ticker": "ASTRAMICRO.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 0.05,
+    "capital": 171396.74
+  },
+  {
+    "date": "2026-06-05",
+    "ticker": "FEDERALBNK.NS",
+    "status": "STOPPED_OUT (-2%)",
+    "pnl_net_pct": -2.15,
+    "capital": 167711.71
+  },
+  {
+    "date": "2026-06-09",
+    "ticker": "FEDERALBNK.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 1.38,
+    "capital": 170027.02
+  },
+  {
+    "date": "2026-06-12",
+    "ticker": "FEDERALBNK.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 0.07,
+    "capital": 170149.83
+  },
+  {
+    "date": "2026-06-16",
+    "ticker": "FEDERALBNK.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": -0.29,
+    "capital": 169656.11
+  },
+  {
+    "date": "2026-06-17",
+    "ticker": "FEDERALBNK.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 0.24,
+    "capital": 170061.37
+  },
+  {
+    "date": "2026-06-19",
+    "ticker": "FEDERALBNK.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": -0.27,
+    "capital": 169596.56
+  },
+  {
+    "date": "2026-06-29",
+    "ticker": "RRKABEL.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": -0.06,
+    "capital": 169498.19
+  },
+  {
+    "date": "2026-07-02",
+    "ticker": "ASTRAMICRO.NS",
+    "status": "STOPPED_OUT (-2%)",
+    "pnl_net_pct": -2.15,
+    "capital": 165853.98
+  },
+  {
+    "date": "2026-07-03",
+    "ticker": "ASTRAMICRO.NS",
+    "status": "T1_HIT (+3%)",
+    "pnl_net_pct": 2.85,
+    "capital": 170580.82
+  },
+  {
+    "date": "2026-07-06",
+    "ticker": "TORNTPHARM.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 0.58,
+    "capital": 171568.38
+  },
+  {
+    "date": "2026-07-15",
+    "ticker": "IPCALAB.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 1.23,
+    "capital": 173686.78
+  },
+  {
+    "date": "2026-07-16",
+    "ticker": "IPCALAB.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 0.22,
+    "capital": 174062.6
+  },
+  {
+    "date": "2026-07-21",
+    "ticker": "EXIDEIND.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": -0.21,
+    "capital": 173703.43
+  },
+  {
+    "date": "2026-07-27",
+    "ticker": "FEDERALBNK.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 0.2,
+    "capital": 174054.08
+  },
+  {
+    "date": "2026-07-28",
+    "ticker": "FEDERALBNK.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": -0.39,
+    "capital": 173379.86
+  },
+  {
+    "date": "2026-07-29",
+    "ticker": "MANAPPURAM.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 1.71,
+    "capital": 176340.24
+  },
+  {
+    "date": "2026-08-03",
+    "ticker": "SONACOMS.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 1.14,
+    "capital": 178351.09
+  },
+  {
+    "date": "2026-08-05",
+    "ticker": "SONACOMS.NS",
+    "status": "T1_HIT (+3%)",
+    "pnl_net_pct": 2.85,
+    "capital": 183434.1
+  },
+  {
+    "date": "2026-08-07",
+    "ticker": "EXIDEIND.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 1.95,
+    "capital": 187019.51
+  },
+  {
+    "date": "2026-08-10",
+    "ticker": "KEI.NS",
+    "status": "SQUARE_OFF_3:15PM",
+    "pnl_net_pct": 0.3,
+    "capital": 187573.73
+  },
+  {
+    "date": "2026-08-26",
+    "ticker": "IPCALAB.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": -0.15,
+    "capital": 187292.37
+  },
+  {
+    "date": "2026-08-28",
+    "ticker": "GLENMARK.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": 1.0,
+    "capital": 189158.15
+  },
+  {
+    "date": "2026-09-09",
+    "ticker": "NAVINFLUOR.NS",
+    "status": "TRAILED_BE",
+    "pnl_net_pct": -0.0,
+    "capital": 189149.64
+  }
+]
