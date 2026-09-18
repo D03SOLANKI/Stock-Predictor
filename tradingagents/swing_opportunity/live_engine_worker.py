@@ -25,6 +25,16 @@ from tradingagents.swing_opportunity.session_state_manager import SessionStateMa
 logger = logging.getLogger(__name__)
 
 
+def is_live_market_session() -> bool:
+    """Check if current time is within NSE live trading hours (9:15 AM - 3:30 PM IST Mon-Fri)."""
+    now = datetime.datetime.now()
+    if now.weekday() >= 5:  # Saturday or Sunday
+        return False
+    start_time = now.replace(hour=9, minute=15, second=0, microsecond=0)
+    end_time = now.replace(hour=15, minute=30, second=0, microsecond=0)
+    return start_time <= now <= end_time
+
+
 class LiveEngineWorker:
     """Live Market Tick Processing & Automated Execution Worker."""
 
@@ -48,7 +58,7 @@ class LiveEngineWorker:
                 logger.debug("Live quote fetch error for %s: %s", s, exc)
         return quotes
 
-    def process_live_tick(self) -> Dict[str, Any]:
+    def process_live_tick(self, force_live_execution: bool = False) -> Dict[str, Any]:
         """Process 1 live tick cycle and update state dynamically."""
         state = self.state_mgr.load_state()
         candidates = state.get("candidates", [])
@@ -56,6 +66,8 @@ class LiveEngineWorker:
         closed_trades = state.get("closed_trades", [])
         account = state.get("account_metrics", {})
         kpis = state.get("performance_kpis", {})
+
+        is_market_open = is_live_market_session() or force_live_execution
 
         # Collect symbols to quote
         all_symbols = list(set(
@@ -96,7 +108,7 @@ class LiveEngineWorker:
 
             # 1. Check Pending Entry Trigger
             if pos["status_tag"] == "PENDING_ENTRY":
-                if cmp_price >= trigger:
+                if is_market_open and cmp_price >= trigger:
                     pos["status_tag"] = "ACTIVE_LONG"
                     pos["entry_price"] = cmp_price
                     pos["execution_phase"] = "🟢 ORDER FILLED / EXECUTING"
@@ -105,7 +117,7 @@ class LiveEngineWorker:
                     )
                     modified = True
                 else:
-                    pos["execution_phase"] = f"⏳ PENDING TRIGGER ({dist_trigger_pct:+.2f}%)"
+                    pos["execution_phase"] = f"⏳ PENDING 9:30 AM MARKET OPEN ({dist_trigger_pct:+.2f}%)"
 
             # 2. Check Active Long Execution Logic
             if pos["status_tag"] in ["ACTIVE_LONG", "PARTIAL_PROFIT"]:
