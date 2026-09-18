@@ -970,6 +970,7 @@ def main():
     ])
 
     with tab_live:
+        state_candidates = SessionStateManager().load_state().get("candidates", [])
         if run_triggered:
             with st.spinner("Analyzing market microstructure, coiling patterns, and volume footprints..."):
                 if "Pre-Market" in active_mode or "Mode 1" in active_mode:
@@ -983,8 +984,16 @@ def main():
                     )
                     opps = engine.run(top_n=config["top_n"])
                     display_swing_results(opps)
+        elif state_candidates:
+            regime_info = SessionStateManager().load_state().get("session_metadata", {})
+            mock_results = {
+                "regime": {"regime": regime_info.get("macro_regime", "CONSOLIDATION_RANGE"), "message": "NIFTY Midcap 150 in intermediate consolidation.", "risk_multiplier": 1.0},
+                "macro_gate": regime_info.get("macro_gate"),
+                "candidates": state_candidates
+            }
+            display_premarket_results(mock_results, config["capital"], config["risk_pct"])
         else:
-            st.info("👆 Click the red/pink **'🚀 RUN LIVE MARKET SCAN'** button above to initiate real-time pre-market analysis and view detailed trade evidence.")
+            st.info("⏳ **Standing by for Monday 8:45 AM Pre-Market Scan**. The discovery engine will automatically analyze the 97 mid/small-cap universe and isolate the Top 3 candidates on Monday morning. Click **'🚀 RUN LIVE MARKET SCAN'** above to run an instant discovery scan right now.")
 
     with tab_analytics:
         display_backtest_analytics()
