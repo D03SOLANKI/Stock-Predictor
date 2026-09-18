@@ -1,0 +1,50 @@
+[
+  {
+    "order_id": "ORD-20260918-01",
+    "timestamp": "09:30:05 IST",
+    "symbol": "COCHINSHIP",
+    "company": "Cochin Shipyard Ltd",
+    "priority_rank": "Rank #1 Primary",
+    "type": "BUY LIMIT",
+    "qty": 79,
+    "buy_trigger": 1255.25,
+    "stop_loss": 1230.14,
+    "target_1": 1292.90,
+    "target_2": 1318.00,
+    "outlay_rupees": 99164.75,
+    "max_risk_rupees": 1983.30,
+    "status": "TRIGGER_PENDING"
+  },
+  {
+    "order_id": "ORD-20260918-02",
+    "timestamp": "09:30:05 IST",
+    "symbol": "MAZDOCK",
+    "company": "Mazagon Dock Shipbuilders Ltd",
+    "priority_rank": "Rank #2 Fallback",
+    "type": "BUY LIMIT",
+    "qty": 41,
+    "buy_trigger": 2422.00,
+    "stop_loss": 2373.56,
+    "target_1": 2494.66,
+    "target_2": 2543.10,
+    "outlay_rupees": 99302.00,
+    "max_risk_rupees": 1986.04,
+    "status": "STANDBY_QUEUE"
+  },
+  {
+    "order_id": "ORD-20260918-03",
+    "timestamp": "09:30:05 IST",
+    "symbol": "TEJASNET",
+    "company": "Tejas Networks Ltd",
+    "priority_rank": "Rank #3 Standby",
+    "type": "BUY LIMIT",
+    "qty": 117,
+    "buy_trigger": 849.50,
+    "stop_loss": 832.51,
+    "target_1": 874.98,
+    "target_2": 891.97,
+    "outlay_rupees": 98865.00,
+    "max_risk_rupees": 1987.83,
+    "status": "STANDBY_QUEUE"
+  }
+]
