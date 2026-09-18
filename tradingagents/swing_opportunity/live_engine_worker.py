@@ -195,13 +195,25 @@ class LiveEngineWorker:
                 pos["unrealized_pnl_rupees"] = round(pos_pnl_rupees, 2)
                 total_unrealized_pnl += pos_pnl_rupees
 
+        # Deduplicate closed_trades by order_id
+        unique_closed = []
+        seen_ids = set()
+        for ct in closed_trades:
+            ct_id = ct.get("order_id", ct.get("symbol"))
+            if ct_id not in seen_ids:
+                seen_ids.add(ct_id)
+                unique_closed.append(ct)
+        closed_trades = unique_closed
+
         # Re-calculate Dynamic KPIs & Account Metrics
         total_tr = kpis.get("total_trades", 240)
         wins = kpis.get("win_count", 205)
         kpis["win_rate_pct"] = round((wins / total_tr * 100.0), 2) if total_tr > 0 else 85.42
 
         init_cap = account.get("initial_capital", 100000.0)
-        realized_pnl = account.get("total_realized_pnl_rupees", 0.0)
+        realized_pnl = sum([ct.get("realized_pnl_rupees", 0.0) for ct in closed_trades])
+        account["daily_realized_pnl_rupees"] = round(realized_pnl, 2)
+        account["total_realized_pnl_rupees"] = round(realized_pnl, 2)
         
         account["allocated_outlay"] = round(total_allocated_outlay, 2)
         account["unrealized_pnl_rupees"] = round(total_unrealized_pnl, 2)
