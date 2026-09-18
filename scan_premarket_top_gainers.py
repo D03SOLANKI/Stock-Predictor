@@ -38,6 +38,7 @@ from tradingagents.swing_opportunity import (
     DayGainerStructurer,
     SwingEvidenceAgent,
 )
+from tradingagents.swing_opportunity.session_state_manager import SessionStateManager
 from tradingagents.default_config import DEFAULT_CONFIG
 
 
@@ -86,6 +87,13 @@ def run_premarket_scan(
     candidates = scan_results["candidates"]
     total_screened = scan_results.get("total_screened", len(screener.tickers))
     passed_gates = scan_results.get("passed_hard_gates", len(candidates))
+
+    # Persist Candidates to Central Reactive Session State
+    try:
+        state_mgr = SessionStateManager()
+        state_mgr.update_candidates(candidates, regime, macro_gate)
+    except Exception as exc:
+        print(f"[!] Warning updating reactive session state: {exc}")
 
     print(f"\n[+] TIER-1 HARD GATES: {passed_gates}/{total_screened} stocks passed \u2265\u20b910 Cr turnover & EQ-series checks.")
     print(f"[+] TIER-2 SCORING (PRIORITY QUEUE): Top {len(candidates)} high-probability candidates isolated:")
