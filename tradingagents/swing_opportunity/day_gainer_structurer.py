@@ -164,6 +164,15 @@ class DayGainerStructurer:
             "expected_gain": f"+{gain_1_pct:.1f}% to +{gain_2_pct:.1f}% Same-Day Expansion",
             "clean_air_margin_pct": clean_air_margin,
             "holding_period": "Strict Same-Day Buy & Sell (Square-Off at 3:15 PM IST)",
+            "trailing_stop": {
+                "trigger_pct": 1.50,
+                "trigger_price": round(trigger_buy_above * 1.015, 2),
+                "trail_to_pct": 0.30,
+                "trail_to_price": round(trigger_buy_above * 1.003, 2),
+                "roundtrip_friction_pct": 0.15,
+                "locked_net_profit_pct": 0.15,
+                "formatted": f"Trail to ₹{round(trigger_buy_above * 1.003, 2):,.2f} (+0.30% gross, +0.15% net) when price reaches ₹{round(trigger_buy_above * 1.015, 2):,.2f} (+1.50%)",
+            },
             "position_sizing": {
                 "account_capital": self.account_capital,
                 "max_risk_allowed": adjusted_risk_rupees,
@@ -173,9 +182,10 @@ class DayGainerStructurer:
                 "portfolio_risk_pct": round((actual_risk_rupees / self.account_capital) * 100.0, 2),
             },
             "orb_execution_protocol": {
-                "stage_1_premarket": "Order placed on Watchlist with trigger monitoring at 9:15 AM.",
+                "stage_1_premarket": "Order placed on Watchlist with trigger monitoring at 9:15 AM (Top 3 Priority Queue: #1 Primary, #2 Fallback, #3 Standby).",
                 "stage_2_confirmation": "At 9:30 AM, verify 15-minute bar closes GREEN (Close >= Open) and >= ₹" + f"{trigger_buy_above:,.2f}.",
-                "cancellation_trigger": "If 15m candle closes RED or < ₹" + f"{trigger_buy_above:,.2f}, cancel order immediately.",
+                "stage_3_volume_gate": "Verify intraday volume is pacing >= 1.0x 20-day average volume (Rec 2: Institutional volume surge).",
+                "cancellation_trigger": "If 15m candle closes RED, < ₹" + f"{trigger_buy_above:,.2f}, or lacks relative volume, cancel order and evaluate next priority rank.",
             },
             "premarket_rules": {
                 "gap_trap_limit": max_gap_threshold,
@@ -184,14 +194,17 @@ class DayGainerStructurer:
                     f"₹{trigger_buy_above:,.2f} as a GREEN candle (Close >= Open). Do NOT enter at 9:15 AM on a blind tick."
                 ),
                 "invalidation_rules": [
+                    "MACRO MARKET GATE (Rec 1): Invalidate long trades if NIFTY Midcap 150 opens < -0.50%.",
                     f"POSITIVE OPEN GATE: Stock must open >= previous close * 0.998 (₹{close:,.2f}).",
                     f"PRE-OPEN AUCTION GATE (9:07 AM): Reject if gap-up exceeds ₹{max_gap_threshold:,.2f} (>+2.5% gap trap).",
+                    "RELATIVE VOLUME GATE (Rec 2): Stock must trade with volume pace >= 1.0x 20-day average volume. Cancel if low volume.",
                     f"ORB RED BAR INVALIDATION: If 9:15–9:30 AM candle closes RED (Close < Open), CANCEL immediately.",
                     (
-                        f"ACCELERATED BREAKEVEN PROTECTION: If price reaches +1.5% (₹{round(trigger_buy_above * 1.015, 2):,.2f}), "
-                        f"trail stop-loss to Breakeven (₹{trigger_buy_above:,.2f}) immediately."
+                        f"FEE-COVERED BREAKEVEN PROTECTION (Rec 3): If price reaches +1.50% (₹{round(trigger_buy_above * 1.015, 2):,.2f}), "
+                        f"immediately trail stop-loss to Entry + 0.30% (₹{round(trigger_buy_above * 1.003, 2):,.2f}). "
+                        f"This covers 15 bps roundtrip friction and locks in +0.15% net profit on intraday pullbacks."
                     ),
-                    "TARGET 1 (+3.0%): Book partial/safe profits or lock locked runner.",
+                    "TARGET 1 (+3.0%): Book partial/safe profits or lock runner.",
                     "TARGET 2 (+5.0%): Full profit booking.",
                     "STRICT SAME-DAY SQUARE-OFF: Close any remaining open position at 3:15 PM IST (No overnight risk).",
                 ],

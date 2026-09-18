@@ -73,6 +73,11 @@ def run_premarket_scan(
     print(f"    {regime['message']}")
     print(f"    Risk Multiplier: {regime['risk_multiplier']}x | Min Score Required: {regime['min_score_required']}/100")
 
+    macro_gate = scan_results.get("macro_gate", {})
+    if macro_gate:
+        print(f"\n[+] TIER-0 MACRO GATE (Recommendation 1): [{macro_gate.get('status', 'PASS')}]")
+        print(f"    {macro_gate.get('message', '')}")
+
     if scan_results.get("halted"):
         print(f"\n[!] SYSTEM HALT: {scan_results.get('reason')}")
         print("[!] To bypass and inspect setups anyway, run with --bypass-regime\n")
@@ -83,9 +88,10 @@ def run_premarket_scan(
     passed_gates = scan_results.get("passed_hard_gates", len(candidates))
 
     print(f"\n[+] TIER-1 HARD GATES: {passed_gates}/{total_screened} stocks passed \u2265\u20b910 Cr turnover & EQ-series checks.")
-    print(f"[+] TIER-2 SCORING: Top {len(candidates)} high-probability candidates isolated:")
+    print(f"[+] TIER-2 SCORING (PRIORITY QUEUE): Top {len(candidates)} high-probability candidates isolated:")
     for idx, c in enumerate(candidates, 1):
-        print(f"    {idx}. {c['stock_name']} ({c['ticker']}) - Score: {c['composite_score']}/100 | CMP: \u20b9{c['close']:,.2f} | 20d Turnover: \u20b9{c['avg_turnover_cr_20d']:,.1f} Cr")
+        queue_role = "Rank 1 (Primary)" if idx == 1 else f"Rank {idx} (Fallback)"
+        print(f"    {idx}. [{queue_role}] {c['stock_name']} ({c['ticker']}) - Score: {c['composite_score']}/100 | CMP: \u20b9{c['close']:,.2f} | 20d Turnover: \u20b9{c['avg_turnover_cr_20d']:,.1f} Cr")
 
     # 2. Structure Trades & Generate Narratives
     print(f"\n[*] Phase 2: Structuring Day-Runner Trade Setups & Generating Evidence...")
@@ -103,18 +109,21 @@ def run_premarket_scan(
         bd = c["score_breakdown"]
         pos = trade["position_sizing"]
         rules = trade["premarket_rules"]
+        queue_header = "PRIMARY TRADE CANDIDATE (RANK 1)" if idx == 1 else f"FALLBACK TRADE CANDIDATE (RANK {idx})"
 
         border = "#" * 85
         print(f"\n{border}")
-        print(f"  PRE-MARKET PICK #{idx}: {trade['stock_name']} ({trade['ticker']}) - [{trade['tier']}]")
+        print(f"  PRE-MARKET PICK #{idx} [{queue_header}]: {trade['stock_name']} ({trade['ticker']}) - [{trade['tier']}]")
         print(f"  Sector: {trade['sector']} | Composite Score: {c['composite_score']} / 100")
         print(f"{border}")
         print(f"  Current Market Price (CMP):     \u20b9{trade['current_market_price']:,.2f}")
         print(f"  BUY Above Trigger Level:        \u20b9{trade['buy_above_trigger']:,.2f} (Breakout of Previous High)")
         print(f"  Execution Entry Zone:           {trade['entry_range']['formatted']}")
         print(f"  Structural Stop Loss (SL):      {trade['stop_loss']['formatted']}")
-        print(f"  Target 1 (+3.5% - Book 50%):    {trade['target_1']['formatted']} (R:R {trade['target_1']['rr_ratio']})")
-        print(f"  Target 2 (+6.5% - Day Runner):  {trade['target_2']['formatted']} (R:R {trade['target_2']['rr_ratio']})")
+        print(f"  Target 1 (+{trade['target_1']['gain_pct']:.1f}%):               {trade['target_1']['formatted']} (R:R {trade['target_1']['rr_ratio']})")
+        print(f"  Target 2 (+{trade['target_2']['gain_pct']:.1f}%):               {trade['target_2']['formatted']} (R:R {trade['target_2']['rr_ratio']})")
+        if "trailing_stop" in trade:
+            print(f"  Trailing Stop (Rec 3):          {trade['trailing_stop']['formatted']}")
         print(f"  Risk-to-Reward Summary:         {trade['risk_reward_summary']}")
         print(f"  Holding Window:                 {trade['holding_period']}")
         print(f"{'-' * 85}")

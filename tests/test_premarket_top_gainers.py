@@ -53,7 +53,7 @@ def test_hard_disqualification_gates():
     # 3. Valid liquid mid-cap (₹50 Cr avg turnover, ₹500 price, dry volume on T-1) -> Should pass
     close_good = pd.Series([500.0] * 25)
     high_good = pd.Series([505.0] * 23 + [508.0, 515.0])  # Clean air / breakout high
-    low_good = pd.Series([495.0] * 25)
+    low_good = pd.Series([485.0] * 25)  # ADR ~4.0% > 2.2% floor
     vol_liquid = pd.Series([1000000] * 24 + [500000])  # Volume dry-up (0.50x ratio)
     passed, reason = screener.check_hard_gates("COCHINSHIP.NS", close_good, high_good, low_good, vol_liquid)
     assert passed, f"Failed with reason: {reason}"
@@ -61,7 +61,7 @@ def test_hard_disqualification_gates():
 
 
 def test_day_gainer_trade_structuring():
-    """Verify trigger price, targets (+3.5%, +6.5%), tight SL (-1.65%), and R:R >= 1:2.0."""
+    """Verify trigger price, targets (+3.0%, +5.0%), stop-loss (-2.0%), and Rec 3 trailing stop."""
     structurer = DayGainerStructurer(account_capital=500000.0, risk_per_trade_pct=1.0)
 
     candidate = {
@@ -95,23 +95,30 @@ def test_day_gainer_trade_structuring():
     assert trade["entry_range"]["lower"] == trade["buy_above_trigger"]
     assert trade["entry_range"]["upper"] > trade["buy_above_trigger"]
 
-    # 2. Stop Loss & Risk
+    # 2. Stop Loss & Risk (-2.0%)
     assert trade["stop_loss"]["price"] < trade["buy_above_trigger"]
-    assert trade["stop_loss"]["risk_pct"] <= 2.6  # Calibrated dynamic stop (max 2.6%)
+    assert trade["stop_loss"]["risk_pct"] == 2.0  # Mode 1 validated -2.0% hard stop
 
-    # 3. Targets (+3.5% T1, +6.5% T2)
-    assert trade["target_1"]["gain_pct"] == 3.5
-    assert trade["target_2"]["gain_pct"] == 6.5
-    assert trade["target_1"]["price"] == round(trade["buy_above_trigger"] * 1.035, 2)
-    assert trade["target_2"]["price"] == round(trade["buy_above_trigger"] * 1.065, 2)
+    # 3. Targets (+3.0% T1, +5.0% T2)
+    assert trade["target_1"]["gain_pct"] == 3.0
+    assert trade["target_2"]["gain_pct"] == 5.0
+    assert trade["target_1"]["price"] == round(trade["buy_above_trigger"] * 1.030, 2)
+    assert trade["target_2"]["price"] == round(trade["buy_above_trigger"] * 1.050, 2)
 
-    # 4. Asymmetric R:R
+    # 4. Recommendation 3 Trailing Stop (+0.30% fee-covered at +1.50% gain)
+    assert "trailing_stop" in trade
+    assert trade["trailing_stop"]["trigger_pct"] == 1.50
+    assert trade["trailing_stop"]["trail_to_pct"] == 0.30
+    assert trade["trailing_stop"]["roundtrip_friction_pct"] == 0.15
+    assert trade["trailing_stop"]["locked_net_profit_pct"] == 0.15
+
+    # 5. Asymmetric R:R
     rr_t1_val = float(trade["target_1"]["rr_ratio"].replace("1:", ""))
     assert rr_t1_val >= 1.4
     rr_t2_val = float(trade["target_2"]["rr_ratio"].replace("1:", ""))
-    assert rr_t2_val >= 2.5
+    assert rr_t2_val >= 2.4
 
-    # 5. Gap Trap Rule (Tightened to +2.5%)
+    # 6. Gap Trap Rule (Tightened to +2.5%)
     assert trade["premarket_rules"]["gap_trap_limit"] == round(trade["buy_above_trigger"] * 1.025, 2)
 
 
@@ -155,3 +162,47 @@ def test_top_gainer_evidence_narrative():
     assert "Supply Exhaustion" in narrative
     assert "Gap-Trap" in narrative
     assert "KAYNES.NS" in narrative
+
+
+def test_recommendation_1_macro_gate():
+    """Verify Recommendation 1 Macro Gate halts on Midcap open < -0.50% and passes on >= -0.50%."""
+    from tradingagents.swing_opportunity.premarket_auction_agent import PreMarketAuctionAgent
+    auction_agent = PreMarketAuctionAgent()
+
+    # 1. Macro down open (-1.2%) -> Should be DISQUALIFIED_MACRO_GATE
+    res_fail = auction_agent.evaluate_macro_gate(open_price=98.8, prev_close=100.0, cutoff_pct=-0.50)
+    assert not res_fail["is_qualified"]
+    assert res_fail["status"] == "DISQUALIFIED_MACRO_GATE"
+    assert res_fail["gap_pct"] == -1.2
+
+    # 2. Mild flat/green open (-0.2% or +0.5%) -> Should PASS
+    res_pass_mild = auction_agent.evaluate_macro_gate(open_price=99.8, prev_close=100.0, cutoff_pct=-0.50)
+    assert res_pass_mild["is_qualified"]
+    assert res_pass_mild["status"] == "PASS_MACRO_GATE"
+    assert res_pass_mild["gap_pct"] == -0.2
+
+    res_pass_green = auction_agent.evaluate_macro_gate(open_price=100.5, prev_close=100.0, cutoff_pct=-0.50)
+    assert res_pass_green["is_qualified"]
+    assert res_pass_green["status"] == "PASS_MACRO_GATE"
+
+    # 3. Screener evaluate_macro_open_gate
+    screener = PreMarketTopGainerScreener()
+    # Mock df_daily with benchmark
+    df_bm_fail = pd.DataFrame({
+        ("NIFTYMIDCAP150.NS", "Close"): [100.0, 100.0],
+        ("NIFTYMIDCAP150.NS", "Open"): [100.0, 99.0],  # -1.0% open
+    })
+    df_bm_fail.columns = pd.MultiIndex.from_tuples(df_bm_fail.columns)
+    eval_fail = screener.evaluate_macro_open_gate(df_bm_fail, cutoff_pct=-0.50)
+    assert not eval_fail["is_qualified"]
+    assert eval_fail["status"] == "HALT_MACRO_GATE"
+
+    df_bm_pass = pd.DataFrame({
+        ("NIFTYMIDCAP150.NS", "Close"): [100.0, 100.0],
+        ("NIFTYMIDCAP150.NS", "Open"): [100.0, 99.8],  # -0.2% open
+    })
+    df_bm_pass.columns = pd.MultiIndex.from_tuples(df_bm_pass.columns)
+    eval_pass = screener.evaluate_macro_open_gate(df_bm_pass, cutoff_pct=-0.50)
+    assert eval_pass["is_qualified"]
+    assert eval_pass["status"] == "PASS_MACRO_GATE"
+

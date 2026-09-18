@@ -97,3 +97,40 @@ class PreMarketAuctionAgent:
             "auction_vol_participation_pct": vol_participation,
             "is_qualified": True,
         }
+
+    def evaluate_macro_gate(
+        self,
+        open_price: float,
+        prev_close: float,
+        cutoff_pct: float = -0.50,
+    ) -> Dict[str, Any]:
+        """Recommendation 1: Macro Gate — Invalidate all trades if Midcap index opens < -0.50%."""
+        if prev_close <= 0:
+            return {
+                "status": "PASS",
+                "is_qualified": True,
+                "gap_pct": 0.0,
+                "cutoff_pct": cutoff_pct,
+                "message": "Invalid previous benchmark close. Defaulting to PASS.",
+            }
+
+        gap_pct = round((open_price / prev_close - 1.0) * 100.0, 2)
+        if gap_pct < cutoff_pct:
+            return {
+                "status": "DISQUALIFIED_MACRO_GATE",
+                "reason": (
+                    f"NIFTY Midcap 150 opened down {gap_pct:.2f}% (< {cutoff_pct:.2f}% Macro Gate). "
+                    f"Severe market-wide gap-down risk. ALL LONG TRADES CANCELLED."
+                ),
+                "gap_pct": gap_pct,
+                "cutoff_pct": cutoff_pct,
+                "is_qualified": False,
+            }
+
+        return {
+            "status": "PASS_MACRO_GATE",
+            "reason": f"NIFTY Midcap 150 opened at {gap_pct:+.2f}% (>= {cutoff_pct:.2f}% Macro Gate). Macro green light.",
+            "gap_pct": gap_pct,
+            "cutoff_pct": cutoff_pct,
+            "is_qualified": True,
+        }
