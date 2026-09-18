@@ -68,7 +68,7 @@ def render_sidebar():
     mode = st.sidebar.radio(
         "Trading Engine Mode",
         [
-            "⚡ Mode 1: Pre-Market Daily Single Best Pick (Cascading Priority Queue | 74.7% Win Rate)",
+            "⚡ Mode 1: Pre-Market Daily Single Best Pick (Top 2 Fallback | 73.5% Win Rate | 5.17 PF)",
             "🎯 NIFTY 50 Short-Term Swing (1-2 Days, +1.0% to +1.5%)",
         ],
         index=0,
@@ -96,8 +96,8 @@ def render_sidebar():
         "Priority Queue Depth (Top Setups)",
         min_value=1,
         max_value=5,
-        value=3,
-        help="Mode 1 Pre-Market Priority Queue: #1 Primary Conviction, #2 Priority Fallback, #3 Standby Runner (Cascading execution achieves 74.7% Win Rate across sessions).",
+        value=2,
+        help="Mode 1 Pre-Market Priority Queue: #1 Primary Conviction, #2 Priority Fallback (Cascading execution achieves 73.5% Win Rate, 5.17 Profit Factor across sessions).",
     )
 
     min_turnover = 10.0
@@ -254,12 +254,12 @@ def display_premarket_results(results, capital, risk_pct):
 
             # Invalidation & Trade Rules Alert
             st.warning(
-                f"""**⚠️ MODE 1 PRIORITY QUEUE PROTOCOL (74.7% Win Rate | 4.05 Profit Factor):**
-• **Cascading Queue Rule:** Monitor Top candidates in order. If Rank #1 fails the 9:08 AM positive open or 9:30 AM green candle gate, seamlessly fall back to Rank #2, then Rank #3. Take strictly 1 trade per day with 100% focus.
-• **Positive Open Gate:** Stock must open ≥ previous close. If opening red, setup is **DISQUALIFIED** (triggers fallback to next candidate).
+                f"""**⚠️ MODE 1 PRIORITY QUEUE PROTOCOL (Top 2 Fallback | 73.5% Win Rate | 5.17 Profit Factor):**
+• **Cascading Queue Rule (Rank 1 ➔ Rank 2):** Evaluate Rank #1 first. If Rank #1 fails the 9:08 AM positive open or 9:30 AM green candle confirmation, seamlessly fall back to Rank #2. Strictly execute 1 single trade per day with 100% capital focus.
+• **Positive Open Gate (9:08 AM):** Stock must open ≥ previous close * 0.998. If opening red, setup is **DISQUALIFIED** (triggers immediate fallback to Rank #2).
 • **9:30 AM Green Candle Confirmation:** {rules['opening_rule']}
-• **Pre-Open Auction Gate (9:08 AM):** Disqualify if price opens with excessive gap-up above **₹{rules['gap_trap_limit']:,.2f}** (>+2.5%).
-• **Accelerated Breakeven Protection:** At +1.5% gain, immediately move Stop Loss to Breakeven to guarantee zero loss on reversals.
+• **Pre-Open Auction Gate (9:08 AM):** Disqualify if price opens with excessive gap-up above **₹{rules['gap_trap_limit']:,.2f}** (>+2.5% gap trap).
+• **Accelerated Breakeven Protection:** At +1.5% gain, immediately move Stop Loss to Breakeven to guarantee zero loss on intraday reversals.
 • **Target Profit Booking:** Target 1 at +3.0%, Target 2 at +5.0%.
 • **Mandatory 3:15 PM Square-Off:** No overnight holding. Position is squared off before market close."""
             )
@@ -349,7 +349,7 @@ def main():
         selected_mode = st.selectbox(
             "Strategy Profile",
             [
-                "⚡ Mode 1: Pre-Market Daily Single Best Pick (Cascading Priority Queue | 74.7% Win Rate)",
+                "⚡ Mode 1: Pre-Market Daily Single Best Pick (Top 2 Fallback | 73.5% Win Rate | 5.17 PF)",
                 "🎯 NIFTY 50 Short-Term Swing (1-2 Days, +1.0% to +1.5%)",
             ],
             index=0 if "Mode 1" in config["mode"] or "Pre-Market" in config["mode"] else 1,
