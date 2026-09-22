@@ -1,0 +1,52 @@
+name: "NSE 8:45 AM Pre-Market Auto-Scan"
+
+on:
+  schedule:
+    # 3:15 AM UTC = 8:45 AM IST (UTC+5:30)
+    # Runs Mon-Fri
+    - cron: "15 3 * * 1-5"
+  workflow_dispatch:  # Allow manual trigger from GitHub UI
+
+jobs:
+  premarket-scan:
+    name: "Run Pre-Market Top-Gainer Scan"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Set up Python 3.12"
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: "Install dependencies"
+        run: |
+          pip install --upgrade pip
+          pip install pandas numpy yfinance requests python-dotenv pyarrow
+
+      - name: "Run Pre-Market Scan & Save Results"
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          python cloud_scan_runner.py
+
+      - name: "Send Email with Today's Picks"
+        if: success()
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+        run: |
+          python send_scan_email.py
+
+      - name: "Commit scan results to repo"
+        run: |
+          git config user.name "NSE AutoScanner"
+          git config user.email "noreply@github.com"
+          git add results/latest_scan.json results/latest_scan_summary.txt || true
+          git diff --staged --quiet || git commit -m "Auto-scan results $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push || true

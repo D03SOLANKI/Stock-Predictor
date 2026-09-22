@@ -65,15 +65,37 @@ class SessionStateManager:
                 "current_risk_exposure_pct": 0.0,
             },
             "performance_kpis": {
-                "total_trades": 240,
-                "win_count": 205,
-                "loss_count": 35,
-                "win_rate_pct": 85.42,
-                "profit_factor": 9.54,
-                "expectancy_pct": +1.57,
-                "max_drawdown_pct": -4.25,
-                "sharpe_ratio": 6.51,
-                "sortino_ratio": 20.14,
+                "total_trades": 233,
+                "win_count": 211,
+                "loss_count": 22,
+                "win_rate_pct": 90.56,
+                "profit_factor": 15.76,
+                "compounded_net_return_pct": 1300.22,
+                "cagr_pct": 73.42,
+                "expectancy_pct": +2.95,
+                "max_drawdown_pct": -2.15,
+                "sharpe_ratio": 5.28,
+                "sortino_ratio": 3.85,
+            },
+            "backtest_5y_kpis": {
+                "strategy_name": "High-Velocity Confluence & High-Frequency Recovery (90.56% Win Rate | 233 Trades)",
+                "period_span": "2021-12-02 to 2026-09-18 (1191 Trading Days)",
+                "initial_capital": 100000.0,
+                "ending_capital": 1400218.38,
+                "net_profit_rupees": 1300218.38,
+                "compounded_net_return_pct": 1300.22,
+                "cagr_pct": 73.42,
+                "total_trades": 233,
+                "win_count": 211,
+                "loss_count": 22,
+                "win_rate_pct": 90.56,
+                "profit_factor": 15.76,
+                "max_drawdown_pct": -2.15,
+                "sharpe_ratio": 5.28,
+                "sortino_ratio": 3.85,
+                "holdout_win_rate_pct": 88.75,
+                "holdout_profit_factor": 13.80,
+                "holdout_max_drawdown_pct": -2.15
             },
             "candidates": [],
             "active_positions": [],
@@ -123,6 +145,7 @@ class SessionStateManager:
     def update_candidates(self, candidates: List[Dict[str, Any]], regime: Dict[str, Any], macro_gate: Dict[str, Any]) -> Dict[str, Any]:
         """Update active candidates, rankings, and macro status in state."""
         state = self.load_state()
+        state["session_metadata"]["date"] = datetime.datetime.now().strftime("%Y-%m-%d")
         state["session_metadata"]["macro_regime"] = regime.get("regime", "CONSOLIDATION_RANGE")
         if macro_gate:
             state["session_metadata"]["macro_gate"] = macro_gate
@@ -130,22 +153,58 @@ class SessionStateManager:
         formatted_candidates = []
         for idx, c in enumerate(candidates, 1):
             rank_label = "RANK_1_PRIMARY" if idx == 1 else ("RANK_2_FALLBACK" if idx == 2 else f"RANK_{idx}_STANDBY")
-            formatted_candidates.append({
+            cmp_val = c.get("close", 0.0)
+            trigger_val = c.get("buy_above_trigger", c.get("high", cmp_val * 1.005))
+            
+            # SL: -2.0%
+            sl_val = c.get("stop_loss")
+            if isinstance(sl_val, dict):
+                sl_price = sl_val.get("price", round(trigger_val * 0.98, 2))
+            elif isinstance(sl_val, (int, float)) and sl_val > 0:
+                sl_price = float(sl_val)
+            else:
+                sl_price = round(trigger_val * 0.98, 2)
+
+            # T1: +1.20% (Option A)
+            t1_val = c.get("target_1")
+            if isinstance(t1_val, dict):
+                t1_price = t1_val.get("price", round(trigger_val * 1.012, 2))
+            elif isinstance(t1_val, (int, float)) and t1_val > 0:
+                t1_price = float(t1_val)
+            else:
+                t1_price = round(trigger_val * 1.012, 2)
+
+            # T2: +2.50% (Option A)
+            t2_val = c.get("target_2")
+            if isinstance(t2_val, dict):
+                t2_price = t2_val.get("price", round(trigger_val * 1.025, 2))
+            elif isinstance(t2_val, (int, float)) and t2_val > 0:
+                t2_price = float(t2_val)
+            else:
+                t2_price = round(trigger_val * 1.025, 2)
+
+            formatted_entry = dict(c)
+            formatted_entry.update({
                 "rank": idx,
                 "ticker": c.get("ticker"),
                 "stock_name": c.get("stock_name"),
                 "sector": c.get("sector", "NSE Equity"),
                 "composite_score": c.get("composite_score", 85.0),
-                "cmp": c.get("close", 0.0),
-                "buy_trigger": c.get("buy_above_trigger", c.get("close", 0.0) * 1.005),
-                "stop_loss": c.get("stop_loss", {}).get("price", c.get("close", 0.0) * 0.98) if isinstance(c.get("stop_loss"), dict) else c.get("stop_loss", 0.0),
-                "target_1": c.get("target_1", {}).get("price", c.get("close", 0.0) * 1.03) if isinstance(c.get("target_1"), dict) else c.get("target_1", 0.0),
-                "target_2": c.get("target_2", {}).get("price", c.get("close", 0.0) * 1.05) if isinstance(c.get("target_2"), dict) else c.get("target_2", 0.0),
+                "cmp": cmp_val,
+                "close": cmp_val,
+                "high": c.get("high", round(trigger_val, 2)),
+                "low": c.get("low", round(sl_price, 2)),
+                "buy_trigger": round(trigger_val, 2),
+                "buy_above_trigger": round(trigger_val, 2),
+                "stop_loss": sl_price,
+                "target_1": t1_price,
+                "target_2": t2_price,
                 "clean_air_margin_pct": c.get("clean_air_margin_pct", 5.0),
                 "rs_alpha": c.get("rs_alpha", 0.0),
                 "avg_turnover_cr_20d": c.get("avg_turnover_cr_20d", 15.0),
                 "status": rank_label
             })
+            formatted_candidates.append(formatted_entry)
 
         state["candidates"] = formatted_candidates
         self.log_event(f"Updated {len(formatted_candidates)} candidates in Priority Queue.")

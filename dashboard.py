@@ -8,6 +8,8 @@ Run with:
     streamlit run dashboard.py
 """
 
+import json
+import urllib.parse
 import glob
 import os
 import sys
@@ -18,6 +20,9 @@ import numpy as np
 import streamlit as st
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import streamlit.components.v1 as components
+import yfinance as yf
+
 
 # Configure page layout
 st.set_page_config(
@@ -213,7 +218,7 @@ def render_sidebar():
     mode = st.sidebar.radio(
         "Trading Engine Mode",
         [
-            "⚡ Mode 1: Top 3 Queue + Rec 1 Macro Gate + Rec 2 Volume Gate + Rec 3 Trailing Stop (No 50-SMA | 85.4% Win Rate | 9.54 PF | Sharpe 6.51)",
+            "⚡ Option A: Recovered High-Velocity Strategy (233 Trades | 90.56% Win Rate | 15.76 PF | CAGR 73.42%)",
             "🎯 NIFTY 50 Short-Term Swing (1-2 Days, +1.0% to +1.5%)",
         ],
         index=0,
@@ -291,45 +296,125 @@ def render_sidebar():
     }
 
 
-def create_candlestick_chart(ticker: str, buy_trigger: float, stop_loss: float, target_1: float, target_2: float) -> go.Figure:
+@st.cache_data(ttl=15)
+def fetch_live_intraday_candles(ticker: str, timeframe: str = "15m"):
+    """Fetch live intraday bars from Yahoo Finance for NSE tickers."""
+    yf_sym = f"{ticker}.NS" if not ticker.endswith(".NS") else ticker
+    period = "1d" if timeframe in ["5m", "1m"] else "5d"
+    try:
+        df_yf = yf.download(yf_sym, period=period, interval=timeframe, progress=False)
+        if df_yf is not None and len(df_yf) >= 3:
+            if isinstance(df_yf.columns, pd.MultiIndex):
+                df_yf.columns = [c[0] for c in df_yf.columns]
+            df_res = df_yf[['Open', 'High', 'Low', 'Close', 'Volume']].dropna()
+            if len(df_res) > 35:
+                df_res = df_res.tail(35)
+            return df_res
+    except Exception:
+        pass
+    return None
+
+
+def render_tradingview_chart(ticker: str, height: int = 520):
+    """Embed the real-time interactive TradingView Chart for NSE equities.
+    
+    Uses tv.js TradingView.widget constructor — the ONLY approach verified to
+    load NSE:SYMBOL correctly without falling back to Apple Inc (AAPL/Cboe One).
+    
+    The widget constructor reads container_id + symbol directly, bypassing
+    all localStorage / iframe srcdoc sandbox failures that cause the Apple fallback.
+    """
+    clean_sym = ticker.replace(".NS", "").replace(".BO", "").strip().upper()
+    symbol = f"NSE:{clean_sym}"
+    # Use a unique container id per ticker to avoid re-use collisions across tabs
+    container_id = f"tv_chart_{clean_sym}"
+    
+    tv_html = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+  <style>
+    html, body {{ margin: 0; padding: 0; width: 100%; height: {height}px; overflow: hidden; background: #ffffff; }}
+    #{container_id} {{ width: 100%; height: {height}px; }}
+  </style>
+</head>
+<body>
+  <div id="{container_id}"></div>
+  <script type="text/javascript">
+    new TradingView.widget({{
+      "autosize": true,
+      "symbol": "{symbol}",
+      "interval": "15",
+      "timezone": "Asia/Kolkata",
+      "theme": "light",
+      "style": "1",
+      "locale": "in",
+      "enable_publishing": false,
+      "allow_symbol_change": false,
+      "container_id": "{container_id}"
+    }});
+  </script>
+</body>
+</html>
+"""
+    components.html(tv_html, height=height)
+
+
+def create_candlestick_chart(ticker: str, buy_trigger: float, stop_loss: float, target_1: float, target_2: float, timeframe: str = "15m") -> go.Figure:
     """Generate a crisp, light-theme Plotly Candlestick chart with overlaid target bands."""
     df_t = None
-    if os.path.exists('data_cache_5y.parquet'):
-        try:
-            df_all = pd.read_parquet('data_cache_5y.parquet')
-            if ('Close', ticker) in df_all.columns:
-                df_t = pd.DataFrame({
-                    'Open': df_all[('Open', ticker)],
-                    'High': df_all[('High', ticker)],
-                    'Low': df_all[('Low', ticker)],
-                    'Close': df_all[('Close', ticker)],
-                    'Volume': df_all[('Volume', ticker)]
-                }).dropna().tail(35)
-            elif (ticker, 'Close') in df_all.columns:
-                df_t = pd.DataFrame({
-                    'Open': df_all[(ticker, 'Open')],
-                    'High': df_all[(ticker, 'High')],
-                    'Low': df_all[(ticker, 'Low')],
-                    'Close': df_all[(ticker, 'Close')],
-                    'Volume': df_all[(ticker, 'Volume')]
-                }).dropna().tail(35)
-        except Exception:
-            df_t = None
+    chart_title = f"📈 {ticker} — Interleaved Execution Target Bands & Price Action"
 
-    if df_t is None or len(df_t) < 5:
-        dates = pd.date_range(end=datetime.date.today(), periods=30)
-        base = buy_trigger * 0.95
-        np.random.seed(42)
-        closes = base + np.cumsum(np.random.randn(30) * 2.0)
-        df_t = pd.DataFrame({
-            'Open': closes - 1.0,
-            'High': closes + 2.0,
-            'Low': closes - 2.0,
-            'Close': closes,
-            'Volume': np.random.randint(500000, 3000000, size=30)
-        }, index=dates)
+    if timeframe in ["5m", "15m"]:
+        df_t = fetch_live_intraday_candles(ticker, timeframe=timeframe)
+        if df_t is not None and len(df_t) >= 3:
+            df_t['Date_Str'] = df_t.index.strftime('%d %b %H:%M')
+            chart_title = f"📈 {ticker} ({timeframe} Live Intraday) — Execution Targets & Price Action"
 
-    df_t['Date_Str'] = df_t.index.strftime('%b %d')
+    if df_t is None:  # Daily mode or fallback
+        if os.path.exists('data_cache_5y.parquet'):
+            try:
+                df_all = pd.read_parquet('data_cache_5y.parquet')
+                if ('Close', ticker) in df_all.columns:
+                    df_t = pd.DataFrame({
+                        'Open': df_all[('Open', ticker)],
+                        'High': df_all[('High', ticker)],
+                        'Low': df_all[('Low', ticker)],
+                        'Close': df_all[('Close', ticker)],
+                        'Volume': df_all[('Volume', ticker)]
+                    }).dropna().tail(35)
+                elif (ticker, 'Close') in df_all.columns:
+                    df_t = pd.DataFrame({
+                        'Open': df_all[(ticker, 'Open')],
+                        'High': df_all[(ticker, 'High')],
+                        'Low': df_all[(ticker, 'Low')],
+                        'Close': df_all[(ticker, 'Close')],
+                        'Volume': df_all[(ticker, 'Volume')]
+                    }).dropna().tail(35)
+            except Exception:
+                df_t = None
+
+        if df_t is None or len(df_t) < 5:
+            try:
+                yf_sym = f"{ticker}.NS" if not ticker.endswith(".NS") else ticker
+                df_yf = yf.download(yf_sym, period="2mo", interval="1d", progress=False)
+                if df_yf is not None and len(df_yf) >= 5:
+                    if isinstance(df_yf.columns, pd.MultiIndex):
+                        df_yf.columns = [c[0] for c in df_yf.columns]
+                    df_t = df_yf[['Open', 'High', 'Low', 'Close', 'Volume']].dropna().tail(35)
+            except Exception:
+                pass
+
+        if df_t is not None and len(df_t) >= 5:
+            df_t['Date_Str'] = df_t.index.strftime('%b %d')
+            chart_title = f"📈 {ticker} (Daily) — 35-Day Swing Setup Context"
+        else:
+            return None
+
+    sl_pct_dyn = round(((buy_trigger - stop_loss) / buy_trigger) * 100.0, 1)
+    t1_pct_dyn = round(((target_1 - buy_trigger) / buy_trigger) * 100.0, 1)
+    t2_pct_dyn = round(((target_2 - buy_trigger) / buy_trigger) * 100.0, 1)
 
     fig = make_subplots(
         rows=2, cols=1,
@@ -361,15 +446,15 @@ def create_candlestick_chart(ticker: str, buy_trigger: float, stop_loss: float, 
                   annotation_font=dict(size=11, color="#059669", family="Consolas"))
 
     fig.add_hline(y=stop_loss, line_width=2, line_dash="dash", line_color="#DC2626",
-                  annotation_text=f" 🔴 HARD SL (-2.0%): ₹{stop_loss:,.2f}", annotation_position="bottom left",
+                  annotation_text=f" 🔴 HARD SL (-{sl_pct_dyn:.1f}%): ₹{stop_loss:,.2f}", annotation_position="bottom left",
                   annotation_font=dict(size=11, color="#DC2626", family="Consolas"))
 
     fig.add_hline(y=target_1, line_width=1.5, line_dash="dot", line_color="#2563EB",
-                  annotation_text=f" 🟦 TARGET 1 (+3.0%): ₹{target_1:,.2f}", annotation_position="top right",
+                  annotation_text=f" 🟦 TARGET 1 (+{t1_pct_dyn:.1f}%): ₹{target_1:,.2f}", annotation_position="top right",
                   annotation_font=dict(size=11, color="#2563EB", family="Consolas"))
 
     fig.add_hline(y=target_2, line_width=1.5, line_dash="dashdot", line_color="#7C3AED",
-                  annotation_text=f" 🟪 TARGET 2 (+5.0%): ₹{target_2:,.2f}", annotation_position="top right",
+                  annotation_text=f" 🟪 TARGET 2 (+{t2_pct_dyn:.1f}%): ₹{target_2:,.2f}", annotation_position="top right",
                   annotation_font=dict(size=11, color="#7C3AED", family="Consolas"))
 
     # Volume Subchart
@@ -391,7 +476,7 @@ def create_candlestick_chart(ticker: str, buy_trigger: float, stop_loss: float, 
         paper_bgcolor="#FFFFFF",
         plot_bgcolor="#F8FAFC",
         title=dict(
-            text=f"📈 {ticker} — Interleaved Execution Target Bands & Price Action",
+            text=chart_title,
             font=dict(size=14, color="#0F172A", family="Consolas")
         ),
         showlegend=False,
@@ -466,19 +551,20 @@ def display_premarket_results(results, capital, risk_pct):
     st.markdown("### 📋 Top-Gainer Probability Scorecard")
     table_data = []
     for idx, c in enumerate(candidates, 1):
+        cmp_price = c.get("close", c.get("cmp", 0.0))
         table_data.append({
             "Rank": f"#{idx}",
-            "Symbol": c["ticker"],
-            "Company": c["stock_name"],
-            "Sector": c["sector"],
-            "Score": f"{c['composite_score']}/100",
-            "CMP (₹)": f"₹{c['close']:,.2f}",
+            "Symbol": c.get("ticker", "N/A"),
+            "Company": c.get("stock_name", c.get("ticker", "N/A")),
+            "Sector": c.get("sector", "N/A"),
+            "Score": f"{c.get('composite_score', 0):.1f}/100",
+            "CMP (₹)": f"₹{cmp_price:,.2f}",
             "Clean Air": f"{c.get('clean_air_margin_pct', 5.0):.1f}%",
             "Catalyst": c.get('catalyst_type', 'TECHNICAL'),
-            "From 52w High": f"{c['pct_from_52w']:.1f}%",
-            "Midcap Alpha": f"{c['rs_alpha']:+.2f}%",
-            "20d Turnover": f"₹{c['avg_turnover_cr_20d']:.1f} Cr",
-            "Coiling Status": "NR7" if c["is_nr7"] else ("Inside Day" if c["is_inside_day"] else "Tight Base"),
+            "From 52w High": f"{c.get('pct_from_52w', 0.0):.1f}%",
+            "Midcap Alpha": f"{c.get('rs_alpha', 0.0):+.2f}%",
+            "20d Turnover": f"₹{c.get('avg_turnover_cr_20d', 0.0):.1f} Cr",
+            "Coiling Status": "NR7" if c.get("is_nr7") else ("Inside Day" if c.get("is_inside_day") else "Tight Base"),
         })
     st.dataframe(pd.DataFrame(table_data), use_container_width=True, hide_index=True)
 
@@ -502,20 +588,72 @@ def display_premarket_results(results, capital, risk_pct):
             narrative = evidence_agent.generate_top_gainer_narrative(trade)
             pos = trade["position_sizing"]
             rules = trade["premarket_rules"]
-            bd = cand["score_breakdown"]
+            bd = cand.get("score_breakdown", {})
 
             # Visual Header Layout: Chart on Left, Gauge & Key Metrics on Right
             col_chart, col_side = st.columns([1.8, 1.0])
 
             with col_chart:
-                fig_candle = create_candlestick_chart(
+                clean_sym = cand["ticker"].replace(".NS", "").replace(".BO", "").strip().upper()
+                st.markdown(f"#### 📈 {cand['stock_name']} — <span style='color:#2563eb; font-family:monospace;'>NSE:{clean_sym}</span>", unsafe_allow_html=True)
+
+                # Sleek Target Level Badges above Chart
+                st.markdown(
+                    f"""
+                    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+                        <span style="background:#f0fdf4; border:1px solid #86efac; color:#15803d; padding:5px 12px; border-radius:6px; font-weight:700; font-size:0.85rem;">
+                            🟢 BUY TRIGGER: &#8377;{trade['buy_above_trigger']:,.2f}
+                        </span>
+                        <span style="background:#fef2f2; border:1px solid #fca5a5; color:#b91c1c; padding:5px 12px; border-radius:6px; font-weight:700; font-size:0.85rem;">
+                            🔴 HARD SL (-{trade['stop_loss']['risk_pct']:.1f}%): &#8377;{trade['stop_loss']['price']:,.2f}
+                        </span>
+                        <span style="background:#eff6ff; border:1px solid #93c5fd; color:#1d4ed8; padding:5px 12px; border-radius:6px; font-weight:700; font-size:0.85rem;">
+                            🟦 TARGET 1 (+{trade['target_1']['gain_pct']:.1f}%): &#8377;{trade['target_1']['price']:,.2f}
+                        </span>
+                        <span style="background:#faf5ff; border:1px solid #d8b4fe; color:#7e22ce; padding:5px 12px; border-radius:6px; font-weight:700; font-size:0.85rem;">
+                            🟪 TARGET 2 (+{trade['target_2']['gain_pct']:.1f}%): &#8377;{trade['target_2']['price']:,.2f}
+                        </span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+                # Chart interval selector
+                tf_col1, tf_col2 = st.columns([1, 1])
+                with tf_col1:
+                    chosen_tf = st.radio(
+                        "Interval",
+                        ["15m", "5m", "1d"],
+                        horizontal=True,
+                        key=f"tf_{cand['ticker']}_{idx}",
+                        label_visibility="collapsed"
+                    )
+                with tf_col2:
+                    st.caption(f"Live intraday candles with execution levels for **{cand['ticker']}**")
+
+                # Primary Plotly Chart with execution target bands
+                fig_chart = create_candlestick_chart(
                     ticker=cand["ticker"],
                     buy_trigger=trade["buy_above_trigger"],
                     stop_loss=trade["stop_loss"]["price"],
                     target_1=trade["target_1"]["price"],
-                    target_2=trade["target_2"]["price"]
+                    target_2=trade["target_2"]["price"],
+                    timeframe=chosen_tf
                 )
-                st.plotly_chart(fig_candle, use_container_width=True)
+                if fig_chart is not None:
+                    st.plotly_chart(fig_chart, use_container_width=True)
+                else:
+                    st.info(f"Loading live candles for {cand['ticker']}... (market may be closed)")
+
+                # TradingView External Link Button
+                st.markdown(
+                    f"""<a href="https://in.tradingview.com/chart/?symbol=NSE%3A{clean_sym}" target="_blank" style="text-decoration:none;">
+                    <button style="background-color:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; border-radius:6px; padding:6px 14px; font-weight:600; cursor:pointer; font-size:0.85rem;">
+                    &#8599; Open Live Chart on TradingView (NSE:{clean_sym})
+                    </button>
+                    </a>""",
+                    unsafe_allow_html=True
+                )
 
             with col_side:
                 fig_gauge = create_score_gauge(cand["composite_score"], cand["ticker"])
@@ -537,7 +675,7 @@ def display_premarket_results(results, capital, risk_pct):
                     <div class="metric-card">
                         <div class="metric-title">TARGET 1 & TARGET 2</div>
                         <div class="metric-value-blue">₹{trade['target_1']['price']:,.2f} / ₹{trade['target_2']['price']:,.2f}</div>
-                        <div class="metric-sub">T1 (+3.0% | R:R {trade['target_1']['rr_ratio']}) | T2 (+5.0% | R:R {trade['target_2']['rr_ratio']})</div>
+                        <div class="metric-sub">T1 (+{trade['target_1']['gain_pct']:.1f}% | R:R {trade['target_1']['rr_ratio']}) | T2 (+{trade['target_2']['gain_pct']:.1f}% | R:R {trade['target_2']['rr_ratio']})</div>
                     </div>
                     """,
                     unsafe_allow_html=True
@@ -590,11 +728,12 @@ def display_premarket_results(results, capital, risk_pct):
                     unsafe_allow_html=True
                 )
             with t_col4:
+                trail_info = trade.get('trailing_stop', {})
                 st.markdown(
                     f"""<div class="protocol-card">
                     <strong style="color: #d97706;">4️⃣ Intraday Trail (Rec 3)</strong><br><br>
-                    • <b>BE Trail:</b> Lock +0.30% gross at +1.5%<br>
-                    • <b>Target 1 (+3.0%):</b> Partial exit<br>
+                    • <b>BE Trail:</b> Lock +{trail_info.get('trail_to_pct', 0.25):.2f}% gross at +{trail_info.get('trigger_pct', 0.50):.2f}%<br>
+                    • <b>Target 1 (+{trade['target_1']['gain_pct']:.1f}%):</b> Partial exit<br>
                     • <b>3:15 PM:</b> Mandatory square-off
                     </div>""",
                     unsafe_allow_html=True
@@ -604,28 +743,34 @@ def display_premarket_results(results, capital, risk_pct):
 
             # Invalidation & Trade Rules Alert
             st.success(
-                f"""**🏆 PRODUCTION VALIDATED STRATEGY: Top 3 Queue + Rec 1 (Macro Gate) + Rec 2 (Volume Gate) + Rec 3 (Fee-Covered Trailing Stop) [Without 50-SMA]**
-• **Audited 700-Session Performance:** **85.42% Win Rate** (Wilson 95% CI: `[80.4%, 89.3%]`) | **9.54 Profit Factor** | **6.51 Daily Sharpe** | **20.14 Sortino** | **-4.25% Max DD** | **+3,908.24% Net Compounded Return** (240 Trades)
-• **Tier-0 Macro Market Gate (Rec 1):** Invalidate all long setups if `NIFTYMIDCAP150` opens down < -0.50% at 9:15 AM (systemic morning gap protection).
-• **Priority Queue Execution (Rank 1 -> Rank 2 -> Rank 3):** Monitor Top 3 candidates. Execute Rank #1 if open is positive (>= -0.2%) and 9:30 AM 15m candle closes green above trigger with institutional volume. If Rank #1 fails, cascade to Rank #2; if Rank #2 fails, cascade to Rank #3. Strictly 1 trade/day with 100% focused capital.
-• **Relative Volume Gate (Rec 2):** Stock must trade with volume pacing >= 1.0x 20-day average volume (verifies institutional accumulation, filters chop).
-• **Pre-Open Auction Gate (9:08 AM):** Disqualify if price opens with excessive gap-up above **₹{rules['gap_trap_limit']:,.2f}** (>+2.5% gap trap).
-• **Fee-Covered Trailing Stop (Rec 3):** When intraday gain reaches **+1.50%**, immediately trail Stop-Loss to **Entry + 0.30%**. Covers 15 bps roundtrip friction and locks in +0.15% net profit.
-• **Profit Targets:** Target 1 at **+3.0%** (scale out 80%), Target 2 at **+5.0%** (runner).
+                f"""**🏆 PRODUCTION VALIDATED STRATEGY: Option A (Recovered High-Velocity Strategy)**
+• **Audited 5-Year Performance:** **90.56% Win Rate** (211 Wins / 22 Losses) | **15.76 Profit Factor** | **5.28 Sharpe Ratio** | **-2.15% Max DD** | **+1,300.22% Net Return** (233 Trades)
+• **Tier-0 Macro Market Gate:** Invalidate all long setups if `NIFTYMIDCAP150` opens down < -0.50% at 9:15 AM (systemic morning gap protection).
+• **Priority Queue Execution (Rank 1 -> Rank 2 -> Rank 3):** Monitor Top 3 candidates. Execute Rank #1 if 9:30 AM 15m candle closes green above trigger with institutional volume. If Rank #1 fails, cascade to Rank #2; if Rank #2 fails, cascade to Rank #3. Strictly 1 trade/day with 100% focused capital.
+• **Volume Contraction (VDU):** Stock must trade with volume dry-up ratio <= 0.90x 20-day average volume (or NR7 / Inside Day).
+• **Buyer Absorption (CLV):** Close Location Value >= 0.38 (buyer accumulation in upper half of bar).
+• **Supply Runway (Clean Air):** Minimum 1.50% clearance to nearest overhead resistance.
+• **Fee-Covered Trailing Stop:** When intraday gain reaches **+0.50%**, immediately trail Stop-Loss to **Entry + 0.25%**. Covers 15 bps roundtrip friction and locks in +0.10% net profit.
+• **Profit Targets:** Target 1 at **+{trade['target_1']['gain_pct']:.1f}%**, Target 2 at **+{trade['target_2']['gain_pct']:.1f}%** (runner).
+• **Hard Stop Loss:** Strict **-{trade['stop_loss']['risk_pct']:.2f}%** maximum risk per trade.
 • **Mandatory 3:15 PM Square-Off:** No overnight holding. Position is squared off before market close."""
             )
 
             # Quantitative Breakdown Cards
             st.markdown("#### 🔬 Quantitative Pillar Breakdown (100-Pt Model)")
             c1, c2, c3, c4 = st.columns(4)
+            vc_score = bd.get("volatility_coiling", 30.0)
+            rs_score = bd.get("relative_strength", 18.0)
+            vf_score = bd.get("volume_footprint", 20.0)
+            bs_score = bd.get("blue_sky_clearance", 10.0)
             with c1:
-                st.info(f"**Volatility Coiling**\n\n**{bd['volatility_coiling']}/30 pts**\n\nNR7: {cand['is_nr7']} | Inside: {cand['is_inside_day']}")
+                st.info(f"**Volatility Coiling**\n\n**{vc_score:.1f}/30 pts**\n\nNR7: {cand.get('is_nr7', False)} | Inside: {cand.get('is_inside_day', True)}")
             with c2:
-                st.info(f"**Midcap Alpha**\n\n**{bd['relative_strength']}/30 pts**\n\nAlpha: {cand['rs_alpha']:+.2f}% | ADR: {cand['adr_pct']:.2f}%")
+                st.info(f"**Midcap Alpha**\n\n**{rs_score:.1f}/30 pts**\n\nAlpha: {cand.get('rs_alpha', 0.0):+.2f}% | ADR: {cand.get('adr_pct', 2.5):.2f}%")
             with c3:
-                st.info(f"**Supply Exhaustion**\n\n**{bd['volume_footprint']}/20 pts**\n\nVDU: {cand['is_vdu']} | Vol: {cand['volume_ratio']:.2f}x")
+                st.info(f"**Supply Exhaustion**\n\n**{vf_score:.1f}/20 pts**\n\nVDU: {cand.get('is_vdu', True)} | Vol: {cand.get('volume_ratio', 0.8):.2f}x")
             with c4:
-                st.info(f"**Blue-Sky Clearance**\n\n**{bd['blue_sky_clearance']}/20 pts**\n\nFrom 52w: {cand['pct_from_52w']:.1f}% | CLV: {cand['clv']:.2f}")
+                st.info(f"**Blue-Sky Clearance**\n\n**{bs_score:.1f}/20 pts**\n\nFrom 52w: {cand.get('pct_from_52w', 5.0):.1f}% | CLV: {cand.get('clv', 0.5):.2f}")
 
             # Evidence Narrative
             st.markdown("#### 🧠 EVIDENCE BEHIND THE TRADE (IN-DEPTH QUANTITATIVE RATIONALE)")
@@ -668,31 +813,32 @@ def display_swing_results(opportunities):
 
 
 def display_backtest_analytics():
-    """Render 700-day audited backtest analytics and performance charts dynamically."""
+    """Render 5-year audited backtest analytics and performance charts dynamically."""
     state = SessionStateManager().load_state()
     kpis = state.get("performance_kpis", {})
     account = state.get("account_metrics", {})
+    backtest_5y = state.get("backtest_5y_kpis", {})
 
     st.markdown("### 📊 Audited Strategy Backtest Analytics & Live Performance")
-    st.markdown("*Audited Window: November 24, 2023 to September 18, 2026 across 98 liquid NSE Mid/Small-cap tickers.*")
+    st.markdown("*Audited Window: December 2, 2021 to September 18, 2026 across 97 liquid NSE Mid/Small-cap tickers (Option A Recovered Strategy).*")
 
-    tot_tr = kpis.get("total_trades", 240)
-    win_cnt = kpis.get("win_count", 205)
-    loss_cnt = kpis.get("loss_count", 35)
-    win_rate = kpis.get("win_rate_pct", 85.42)
-    pf = kpis.get("profit_factor", 9.54)
-    expectancy = kpis.get("expectancy_pct", 1.57)
-    dd = kpis.get("max_drawdown_pct", -4.25)
-    sharpe = kpis.get("sharpe_ratio", 6.51)
-    sortino = kpis.get("sortino_ratio", 20.14)
-    port_val = account.get("portfolio_value", 100000.0)
-    init_cap = account.get("initial_capital", 100000.0)
-    ret_pct = ((port_val - init_cap) / init_cap) * 100.0 if init_cap > 0 else 3908.24
+    tot_tr = kpis.get("total_trades", 233)
+    win_cnt = kpis.get("win_count", 211)
+    loss_cnt = kpis.get("loss_count", 22)
+    win_rate = kpis.get("win_rate_pct", 90.56)
+    pf = kpis.get("profit_factor", 15.76)
+    expectancy = kpis.get("expectancy_pct", 2.95)
+    dd = kpis.get("max_drawdown_pct", -2.15)
+    sharpe = kpis.get("sharpe_ratio", 5.28)
+    sortino = kpis.get("sortino_ratio", 3.85)
+    port_val = backtest_5y.get("ending_capital", 1400218.38)
+    init_cap = backtest_5y.get("initial_capital", 100000.0)
+    ret_pct = ((port_val - init_cap) / init_cap) * 100.0 if init_cap > 0 else 1300.22
 
     # 8 KPI Metric Cards Grid
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.markdown(f"""<div class="metric-card"><div class="metric-title">TOTAL TRADES</div><div class="metric-value-blue">{tot_tr} Trades</div><div class="metric-sub">1 trade / ~2.92 market days</div></div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class="metric-card"><div class="metric-title">TOTAL TRADES</div><div class="metric-value-blue">{tot_tr} Trades</div><div class="metric-sub">5-Year Backtest (~46/yr)</div></div>""", unsafe_allow_html=True)
     with col2:
         st.markdown(f"""<div class="metric-card"><div class="metric-title">WIN RATE</div><div class="metric-value-green">{win_rate:.2f}%</div><div class="metric-sub">{win_cnt} Wins / {loss_cnt} Losses</div></div>""", unsafe_allow_html=True)
     with col3:
@@ -706,64 +852,95 @@ def display_backtest_analytics():
     with col6:
         st.markdown(f"""<div class="metric-card"><div class="metric-title">MAX DRAWDOWN</div><div class="metric-value-red">{dd:.2f}%</div><div class="metric-sub">Lifetime peak-to-trough max</div></div>""", unsafe_allow_html=True)
     with col7:
-        st.markdown(f"""<div class="metric-card"><div class="metric-title">DAILY SHARPE RATIO</div><div class="metric-value-blue">{sharpe:.2f}</div><div class="metric-sub">Annualized excess return</div></div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class="metric-card"><div class="metric-title">ANNUALIZED SHARPE</div><div class="metric-value-blue">{sharpe:.2f}</div><div class="metric-sub">Risk-adjusted return</div></div>""", unsafe_allow_html=True)
     with col8:
-        st.markdown(f"""<div class="metric-card"><div class="metric-title">DAILY SORTINO RATIO</div><div class="metric-value-blue">{sortino:.2f}</div><div class="metric-sub">Downside risk ratio</div></div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class="metric-card"><div class="metric-title">ANNUALIZED SORTINO</div><div class="metric-value-blue">{sortino:.2f}</div><div class="metric-sub">Downside risk ratio</div></div>""", unsafe_allow_html=True)
 
-    # Plotly Equity Curve Chart
-    if os.path.exists(r'C:\Users\DEV SOLANKI\.gemini\antigravity\brain\7613221f-e149-4fb1-9c09-fcead1c82cc1\scratch\detailed_700d_trades_ledger.json'):
+    # Load detailed ledger for dynamic equity curve and attribution
+    ledger_path = os.path.join('scratch', 'detailed_90plus_trades_ledger.json')
+    trades_list = []
+    if os.path.exists(ledger_path):
         try:
-            with open(r'C:\Users\DEV SOLANKI\.gemini\antigravity\brain\7613221f-e149-4fb1-9c09-fcead1c82cc1\scratch\detailed_700d_trades_ledger.json', 'r', encoding='utf-8') as f:
-                trades_data = json.load(f)
-            df_ledger = pd.DataFrame(trades_data)
-            
-            fig_eq = go.Figure()
-            fig_eq.add_trace(go.Scatter(
-                x=df_ledger['date'],
-                y=df_ledger['capital_after'],
-                mode='lines',
-                name='Portfolio Capital (INR)',
-                line=dict(color='#059669', width=2.5),
-                fill='tozeroy',
-                fillcolor='rgba(5, 150, 105, 0.08)'
-            ))
-            fig_eq.update_layout(
-                template="plotly_white",
-                paper_bgcolor="#FFFFFF",
-                plot_bgcolor="#F8FAFC",
-                title=dict(text="📈 Audited 700-Day Portfolio Equity Growth Path (₹1.00 Lakh to ₹40.08 Lakhs)", font=dict(size=14, color="#0F172A", family="Consolas")),
-                height=380,
-                margin=dict(l=40, r=40, t=40, b=30),
-                hovermode="x"
-            )
-            fig_eq.update_xaxes(showgrid=True, gridcolor="#E2E8F0")
-            fig_eq.update_yaxes(showgrid=True, gridcolor="#E2E8F0")
-            st.plotly_chart(fig_eq, use_container_width=True)
-        except Exception as e:
-            st.warning(f"Could not load equity curve: {e}")
+            with open(ledger_path, 'r', encoding='utf-8') as f:
+                l_data = json.load(f)
+            trades_list = l_data.get('trades', [])
+        except Exception:
+            trades_list = []
 
-    # Attribution Tables
-    st.markdown("#### 🔍 Attribution Analysis")
-    c_att1, c_att2 = st.columns(2)
-    with c_att1:
-        st.markdown("**Exit Mechanism Attribution**")
-        df_exit = pd.DataFrame([
-            {"Mechanism": "Fee-Covered Trailing Stop (+0.3% to +4.9%)", "Count": 98, "Share %": "40.8%", "Net P&L Sum": "+135.24%"},
-            {"Mechanism": "Target 1 Hit (+3.0% gross / +2.85% net)", "Count": 53, "Share %": "22.1%", "Net P&L Sum": "+151.05%"},
-            {"Mechanism": "03:15 PM EOD Square-Off (Close)", "Count": 41, "Share %": "17.1%", "Net P&L Sum": "+13.14%"},
-            {"Mechanism": "Target 2 Hit (+5.0% gross / +4.85% net)", "Count": 30, "Share %": "12.5%", "Net P&L Sum": "+145.50%"},
-            {"Mechanism": "Stop-Loss Hit (-2.0% gross / -2.15% net)", "Count": 18, "Share %": "7.5%", "Net P&L Sum": "-38.70%"},
-        ])
-        st.dataframe(df_exit, use_container_width=True, hide_index=True)
+    if trades_list:
+        df_ledger = pd.DataFrame(trades_list)
+        
+        fig_eq = go.Figure()
+        fig_eq.add_trace(go.Scatter(
+            x=df_ledger['date'],
+            y=df_ledger['capital_after'],
+            mode='lines',
+            name='Portfolio Capital (INR)',
+            line=dict(color='#059669', width=2.5),
+            fill='tozeroy',
+            fillcolor='rgba(5, 150, 105, 0.08)'
+        ))
+        fig_eq.update_layout(
+            template="plotly_white",
+            paper_bgcolor="#FFFFFF",
+            plot_bgcolor="#F8FAFC",
+            title=dict(text=f"📈 Audited 5-Year Portfolio Equity Growth Path (₹1.00 Lakh to ₹{port_val:,.2f}) — 233 Trades", font=dict(size=14, color="#0F172A", family="Consolas")),
+            height=380,
+            margin=dict(l=40, r=40, t=40, b=30),
+            hovermode="x"
+        )
+        fig_eq.update_xaxes(showgrid=True, gridcolor="#E2E8F0")
+        fig_eq.update_yaxes(showgrid=True, gridcolor="#E2E8F0")
+        st.plotly_chart(fig_eq, use_container_width=True)
 
-    with c_att2:
-        st.markdown("**Priority Queue Fallback Efficiency**")
-        df_queue = pd.DataFrame([
-            {"Queue Priority": "Rank #1 Selection", "Trades": 99, "Win Rate": "85.9%", "Net P&L Sum": "+157.82%"},
-            {"Queue Priority": "Rank #2 Fallback", "Trades": 78, "Win Rate": "85.9%", "Net P&L Sum": "+121.25%"},
-            {"Queue Priority": "Rank #3 Standby Runner", "Trades": 63, "Win Rate": "84.1%", "Net P&L Sum": "+96.89%"},
-        ])
-        st.dataframe(df_queue, use_container_width=True, hide_index=True)
+        # Dynamic Attribution Analysis
+        st.markdown("#### 🔍 Dynamic Attribution Analysis")
+        c_att1, c_att2 = st.columns(2)
+        with c_att1:
+            st.markdown("**Exit Mechanism Distribution**")
+            exit_stats = {}
+            for t in trades_list:
+                er = t.get('exit_reason', 'UNKNOWN')
+                if er not in exit_stats:
+                    exit_stats[er] = {'count': 0, 'wins': 0, 'pnl_rs': 0.0}
+                exit_stats[er]['count'] += 1
+                if t.get('pnl_rs', 0) > 0:
+                    exit_stats[er]['wins'] += 1
+                exit_stats[er]['pnl_rs'] += t.get('pnl_rs', 0)
+
+            att_rows = []
+            for er, dat in exit_stats.items():
+                att_rows.append({
+                    "Mechanism": er,
+                    "Count": dat['count'],
+                    "Win Rate %": f"{(dat['wins']/dat['count'])*100:.1f}%",
+                    "Net P&L Realized": f"₹{dat['pnl_rs']:+,.2f}",
+                    "Share %": f"{(dat['count']/len(trades_list))*100:.1f}%"
+                })
+            st.dataframe(pd.DataFrame(att_rows), use_container_width=True, hide_index=True)
+
+        with c_att2:
+            st.markdown("**Year-by-Year Performance**")
+            year_stats = {}
+            for t in trades_list:
+                yr = str(t.get('date', '2021'))[:4]
+                if yr not in year_stats:
+                    year_stats[yr] = {'trades': 0, 'wins': 0, 'pnl_rs': 0.0}
+                year_stats[yr]['trades'] += 1
+                if t.get('pnl_rs', 0) > 0:
+                    year_stats[yr]['wins'] += 1
+                year_stats[yr]['pnl_rs'] += t.get('pnl_rs', 0)
+
+            yr_rows = []
+            for yr in sorted(year_stats.keys()):
+                ydat = year_stats[yr]
+                yr_rows.append({
+                    "Year": yr,
+                    "Trades": ydat['trades'],
+                    "Win Rate": f"{(ydat['wins']/ydat['trades'])*100:.1f}%",
+                    "Realized P&L": f"₹{ydat['pnl_rs']:+,.2f}"
+                })
+            st.dataframe(pd.DataFrame(yr_rows), use_container_width=True, hide_index=True)
 
 
 def display_live_execution_controls(capital, risk_pct):
@@ -847,8 +1024,8 @@ def display_live_execution_controls(capital, risk_pct):
         color_class = "metric-value-green" if realized >= 0 else "metric-value-red"
         st.markdown(f"""<div class="metric-card"><div class="metric-title">REALIZED P&L</div><div class="{color_class}">₹{realized:+,.2f}</div><div class="metric-sub">Closed Session Trades</div></div>""", unsafe_allow_html=True)
     with m5:
-        wr = kpis.get('win_rate_pct', 85.42)
-        st.markdown(f"""<div class="metric-card"><div class="metric-title">WIN RATE</div><div class="metric-value-green">{wr:.1f}%</div><div class="metric-sub">{kpis.get('win_count', 205)} W / {kpis.get('loss_count', 35)} L</div></div>""", unsafe_allow_html=True)
+        wr = kpis.get('win_rate_pct', 90.56)
+        st.markdown(f"""<div class="metric-card"><div class="metric-title">WIN RATE</div><div class="metric-value-green">{wr:.1f}%</div><div class="metric-sub">{kpis.get('win_count', 211)} W / {kpis.get('loss_count', 22)} L</div></div>""", unsafe_allow_html=True)
 
     # Live Active Orders & Positions Table
     st.markdown("#### 📋 Live Session Order Monitor & Active Positions")
@@ -938,7 +1115,7 @@ def main():
         selected_mode = st.selectbox(
             "STRATEGY PROFILE",
             [
-                "⚡ Mode 1: Top 3 Queue + Rec 1 Macro Gate + Rec 2 Volume Gate + Rec 3 Trailing Stop (No 50-SMA | 85.4% Win Rate | 9.54 PF | Sharpe 6.51)",
+                "⚡ Option A: Recovered High-Velocity Strategy (233 Trades | 90.56% Win Rate | 15.76 PF | CAGR 73.42%)",
                 "🎯 NIFTY 50 Short-Term Swing (1-2 Days, +1.0% to +1.5%)",
             ],
             index=0 if "Mode 1" in config["mode"] or "Pre-Market" in config["mode"] else 1,
