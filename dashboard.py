@@ -96,45 +96,38 @@ st.markdown(
     }
     /* Light Tab Styling - Crystal Clear Visible Text */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background-color: #ffffff;
-        padding: 6px;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        gap: 8px !important;
+        background-color: #ffffff !important;
+        padding: 6px !important;
+        border-radius: 8px !important;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
     }
-    .stTabs [data-baseweb="tab"] {
-        padding: 8px 18px;
-        border-radius: 6px;
+    button[data-baseweb="tab"] {
+        padding: 8px 18px !important;
+        border-radius: 6px !important;
         border-bottom: none !important;
-        background-color: transparent !important;
+        background-color: #f1f5f9 !important;
+        border: 1px solid #e2e8f0 !important;
     }
-    .stTabs [data-baseweb="tab"],
-    .stTabs [data-baseweb="tab"] p,
-    .stTabs [data-baseweb="tab"] span,
-    .stTabs [data-baseweb="tab"] div {
-        color: #334155 !important;
+    button[data-baseweb="tab"] * {
+        color: #1e293b !important;
         font-weight: 600 !important;
         font-size: 0.92rem !important;
         opacity: 1 !important;
     }
-    .stTabs [data-baseweb="tab"]:hover {
-        background-color: #f1f5f9 !important;
+    button[data-baseweb="tab"]:hover {
+        background-color: #e2e8f0 !important;
     }
-    .stTabs [data-baseweb="tab"]:hover p,
-    .stTabs [data-baseweb="tab"]:hover span,
-    .stTabs [data-baseweb="tab"]:hover div {
+    button[data-baseweb="tab"]:hover * {
         color: #0f172a !important;
     }
-    .stTabs [aria-selected="true"] {
+    button[data-baseweb="tab"][aria-selected="true"] {
         background-color: #eff6ff !important;
-        border: none !important;
-        border-bottom: none !important;
+        border: 1px solid #93c5fd !important;
         box-shadow: none !important;
     }
-    .stTabs [aria-selected="true"] p,
-    .stTabs [aria-selected="true"] span,
-    .stTabs [aria-selected="true"] div {
+    button[data-baseweb="tab"][aria-selected="true"] * {
         color: #2563eb !important;
         font-weight: 700 !important;
     }
