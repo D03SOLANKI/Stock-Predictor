@@ -1,16 +1,16 @@
 {
   "session_metadata": {
     "session_id": "SESS-20260918",
-    "date": "2026-09-18",
-    "last_updated": "2026-09-21 08:51:37 IST",
+    "date": "2026-09-22",
+    "last_updated": "2026-09-22 08:28:41 IST",
     "market_status": "LIVE_MARKET",
     "macro_regime": "CONSOLIDATION_RANGE",
     "macro_gate": {
       "status": "PASS_MACRO_GATE",
       "is_qualified": true,
-      "gap_pct": -0.3,
+      "gap_pct": 0.2,
       "cutoff_pct": -0.5,
-      "message": "NIFTY Midcap 150 opened at -0.30% (>= -0.50% Macro Gate). Green light."
+      "message": "NIFTY Midcap 150 opened at +0.20% (>= -0.50% Macro Gate). Green light."
     },
     "strategy_profile": "Mode 1: Top 3 Queue + Rec 1 Macro Gate + Rec 2 Volume Gate + Rec 3 Trailing Stop (No 50-SMA)"
   },
