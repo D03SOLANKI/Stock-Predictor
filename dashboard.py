@@ -94,7 +94,7 @@ st.markdown(
         background-color: #1d4ed8 !important;
         border-color: #1d4ed8 !important;
     }
-    /* Light Tab Styling - No Bottom Border / No Highlight Line */
+    /* Light Tab Styling - Crystal Clear Visible Text */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
         background-color: #ffffff;
@@ -106,16 +106,37 @@ st.markdown(
     .stTabs [data-baseweb="tab"] {
         padding: 8px 18px;
         border-radius: 6px;
-        color: #475569;
-        font-weight: 600;
         border-bottom: none !important;
+        background-color: transparent !important;
+    }
+    .stTabs [data-baseweb="tab"],
+    .stTabs [data-baseweb="tab"] p,
+    .stTabs [data-baseweb="tab"] span,
+    .stTabs [data-baseweb="tab"] div {
+        color: #334155 !important;
+        font-weight: 600 !important;
+        font-size: 0.92rem !important;
+        opacity: 1 !important;
+    }
+    .stTabs [data-baseweb="tab"]:hover {
+        background-color: #f1f5f9 !important;
+    }
+    .stTabs [data-baseweb="tab"]:hover p,
+    .stTabs [data-baseweb="tab"]:hover span,
+    .stTabs [data-baseweb="tab"]:hover div {
+        color: #0f172a !important;
     }
     .stTabs [aria-selected="true"] {
         background-color: #eff6ff !important;
-        color: #2563eb !important;
         border: none !important;
         border-bottom: none !important;
         box-shadow: none !important;
+    }
+    .stTabs [aria-selected="true"] p,
+    .stTabs [aria-selected="true"] span,
+    .stTabs [aria-selected="true"] div {
+        color: #2563eb !important;
+        font-weight: 700 !important;
     }
     /* Light Metric Cards */
     .metric-card {
