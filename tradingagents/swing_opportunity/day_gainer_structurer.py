@@ -83,31 +83,36 @@ class DayGainerStructurer:
     def structure_trade(self, candidate: Dict[str, Any], risk_multiplier: float = 1.0) -> Dict[str, Any]:
         """Convert a pre-market candidate into an actionable day top-gainer trade plan."""
         ticker = candidate["ticker"]
-        close = candidate["close"]
-        high = candidate["high"]
-        low = candidate["low"]
+        close = candidate.get("close", candidate.get("cmp", 0.0))
+        high = candidate.get("high", candidate.get("buy_trigger", close * 1.005))
+        low = candidate.get("low", candidate.get("stop_loss", close * 0.98))
         adr_pct = candidate.get("adr_pct", 4.5)
         circuit_band = candidate.get("circuit_band", 20)
         clean_air_margin = candidate.get("clean_air_margin_pct", 5.0)
 
         # 1. Breakout Trigger Level: BUY Above
-        raw_trigger = high + max(round(high * 0.0010, 2), 0.10)
-        trigger_buy_above = round(math.ceil(raw_trigger / 0.05) * 0.05, 2)
+        if "buy_above_trigger" in candidate and candidate["buy_above_trigger"] > 0:
+            trigger_buy_above = round(float(candidate["buy_above_trigger"]), 2)
+        elif "buy_trigger" in candidate and candidate["buy_trigger"] > 0:
+            trigger_buy_above = round(float(candidate["buy_trigger"]), 2)
+        else:
+            raw_trigger = high + max(round(high * 0.0010, 2), 0.10)
+            trigger_buy_above = round(math.ceil(raw_trigger / 0.05) * 0.05, 2)
 
         # 2. Execution Entry Zone (0.40% execution band)
         entry_upper = round(trigger_buy_above * 1.004, 2)
 
-        # 3. Dynamic Stop Loss (Mode 1 Validated: -2.0%)
+        # 3. Dynamic Stop Loss (Option A Validated: -2.00%)
         risk_pct = 2.00
         stop_loss = round(trigger_buy_above * (1.0 - risk_pct / 100.0), 2)
         risk_rupees_per_share = round(trigger_buy_above - stop_loss, 2)
 
-        # 4. Multi-Tier Day Targets (Mode 1 Validated: +3.0% and +5.0%)
-        gain_1_pct = 3.00
+        # 4. Multi-Tier Day Targets (Option A High-Velocity: +1.20% and +2.50%)
+        gain_1_pct = 1.20
         target_1 = round(trigger_buy_above * (1.0 + gain_1_pct / 100.0), 2)
         gain_1_rupees = round(target_1 - trigger_buy_above, 2)
 
-        gain_2_pct = 5.00
+        gain_2_pct = 2.50
         target_2 = round(trigger_buy_above * (1.0 + gain_2_pct / 100.0), 2)
         gain_2_rupees = round(target_2 - trigger_buy_above, 2)
 
@@ -165,13 +170,13 @@ class DayGainerStructurer:
             "clean_air_margin_pct": clean_air_margin,
             "holding_period": "Strict Same-Day Buy & Sell (Square-Off at 3:15 PM IST)",
             "trailing_stop": {
-                "trigger_pct": 1.50,
-                "trigger_price": round(trigger_buy_above * 1.015, 2),
-                "trail_to_pct": 0.30,
-                "trail_to_price": round(trigger_buy_above * 1.003, 2),
+                "trigger_pct": 0.50,
+                "trigger_price": round(trigger_buy_above * 1.005, 2),
+                "trail_to_pct": 0.25,
+                "trail_to_price": round(trigger_buy_above * 1.0025, 2),
                 "roundtrip_friction_pct": 0.15,
-                "locked_net_profit_pct": 0.15,
-                "formatted": f"Trail to ₹{round(trigger_buy_above * 1.003, 2):,.2f} (+0.30% gross, +0.15% net) when price reaches ₹{round(trigger_buy_above * 1.015, 2):,.2f} (+1.50%)",
+                "locked_net_profit_pct": 0.10,
+                "formatted": f"Trail to ₹{round(trigger_buy_above * 1.0025, 2):,.2f} (+0.25% gross, +0.10% net) when price reaches ₹{round(trigger_buy_above * 1.005, 2):,.2f} (+0.50%)",
             },
             "position_sizing": {
                 "account_capital": self.account_capital,

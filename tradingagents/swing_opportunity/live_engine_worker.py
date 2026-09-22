@@ -13,7 +13,7 @@ import math
 import os
 import sys
 import time
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 import yfinance as yf
 
@@ -124,22 +124,22 @@ class LiveEngineWorker:
                 total_allocated_outlay += outlay
                 gain_pct = ((cmp_price - entry) / entry) * 100.0
                 
-                # Rec 3 Trailing Stop Rule: Lock +0.30% at +1.50% gain
-                if gain_pct >= 1.50 and not pos.get("trailing_stop_active"):
-                    new_sl = round(entry * 1.003, 2)  # Entry + 0.30%
+                # Option A Trailing Stop Rule: Lock +0.25% at +0.50% gain
+                if gain_pct >= 0.50 and not pos.get("trailing_stop_active"):
+                    new_sl = round(entry * 1.0025, 2)  # Entry + 0.25%
                     pos["current_sl"] = new_sl
                     pos["trailing_stop_active"] = True
-                    pos["execution_phase"] = "🔒 TRAILING STOP LOCKED (+0.30%)"
+                    pos["execution_phase"] = "🔒 TRAILING STOP LOCKED (+0.25%)"
                     self.state_mgr.log_event(
-                        f"🔒 Gain reached +{gain_pct:.2f}% on {sym}! Rec 3 Trailing Stop locked at ₹{new_sl:,.2f} (+0.30%)."
+                        f"🔒 Gain reached +{gain_pct:.2f}% on {sym}! Option A Trailing Stop locked at ₹{new_sl:,.2f} (+0.25%)."
                     )
                     modified = True
 
                 # Target 2 Hit (Full Exit)
                 if cmp_price >= t2:
-                    pnl_pct = 5.0
-                    pnl_rupees = outlay * 0.05
-                    pos["execution_phase"] = "🎯 TARGET 2 HIT (+5.0%)"
+                    pnl_pct = round(((t2 - entry) / entry) * 100.0, 2)
+                    pnl_rupees = round(outlay * (pnl_pct / 100.0), 2)
+                    pos["execution_phase"] = f"🎯 TARGET 2 HIT (+{pnl_pct:.1f}%)"
                     pos["status_tag"] = "CLOSED_WIN"
                     pos["closed_price"] = cmp_price
                     pos["realized_pnl_rupees"] = pnl_rupees
@@ -154,7 +154,7 @@ class LiveEngineWorker:
                     account["total_realized_pnl_rupees"] = account.get("total_realized_pnl_rupees", 0.0) + pnl_rupees
                     
                     self.state_mgr.log_event(
-                        f"🎉 Target 2 Hit on {sym} at ₹{cmp_price:,.2f}! Full exit executed (+₹{pnl_rupees:,.2f} | +5.0%)."
+                        f"🎉 Target 2 Hit on {sym} at ₹{cmp_price:,.2f}! Full exit executed (+₹{pnl_rupees:,.2f} | +{pnl_pct:.1f}%)."
                     )
                     modified = True
                     continue
@@ -162,18 +162,19 @@ class LiveEngineWorker:
                 # Target 1 Hit (Partial Exit)
                 elif cmp_price >= t1 and pos["status_tag"] != "PARTIAL_PROFIT":
                     pos["status_tag"] = "PARTIAL_PROFIT"
-                    pos["execution_phase"] = "🎯 TARGET 1 HIT (+3.0%)"
+                    t1_pct = round(((t1 - entry) / entry) * 100.0, 2)
+                    pos["execution_phase"] = f"🎯 TARGET 1 HIT (+{t1_pct:.1f}%)"
                     self.state_mgr.log_event(
-                        f"🎯 Target 1 Hit on {sym} at ₹{cmp_price:,.2f}! Partial profit booked (+3.0%)."
+                        f"🎯 Target 1 Hit on {sym} at ₹{cmp_price:,.2f}! Partial profit booked (+{t1_pct:.1f}%)."
                     )
                     modified = True
 
                 # Stop-Loss Hit
                 elif cmp_price <= current_sl:
                     if pos.get("trailing_stop_active"):
-                        pnl_pct = +0.15  # Net profit locked after friction
-                        pnl_rupees = outlay * 0.0015
-                        phase = "🔒 TRAIL STOP EXITED (+0.15% Net)"
+                        pnl_pct = +0.10  # Net profit locked (+0.25% gross - 0.15% friction)
+                        pnl_rupees = round(outlay * 0.0010, 2)
+                        phase = "🔒 TRAIL STOP EXITED (+0.10% Net)"
                         kpis["win_count"] = kpis.get("win_count", 0) + 1
                     else:
                         pnl_pct = -2.0
@@ -244,42 +245,90 @@ class LiveEngineWorker:
         self.state_mgr.save_state(state)
         return state
 
-    def simulate_event(self, event_type: str, symbol: str = "COCHINSHIP") -> Dict[str, Any]:
-        """Manual simulation helper to test real-time UI state transitions."""
+    def simulate_event(self, event_type: str, symbol: Optional[str] = None) -> Dict[str, Any]:
+        """Manual simulation helper to test real-time UI state transitions dynamically."""
         state = self.state_mgr.load_state()
         positions = state.get("active_positions", [])
+        candidates = state.get("candidates", [])
 
-        if not positions:
-            # Re-create primary candidate position for simulation
+        if not positions and candidates:
+            c1 = candidates[0]
+            sym = c1["ticker"]
+            qty = c1.get("recommended_shares", int(100000.0 * 0.98 / max(c1["cmp"], 1.0)))
+            trigger = c1["buy_trigger"]
+            sl = c1["stop_loss"]
+            t1 = c1["target_1"]
+            t2 = c1["target_2"]
+            outlay = c1.get("outlay_rupees", qty * trigger)
+            max_risk = c1.get("max_risk_rupees", outlay * 0.02)
+
             positions = [{
-                "order_id": "ORD-20260918-01",
-                "symbol": "COCHINSHIP",
-                "company": "Cochin Shipyard Ltd",
+                "order_id": f"ORD-{datetime.datetime.now().strftime('%Y%m%d')}-01",
+                "symbol": sym,
+                "company": c1.get("stock_name", sym),
                 "priority_rank": "Rank #1 Primary",
                 "type": "BUY LIMIT",
-                "qty": 79,
-                "buy_trigger": 1255.25,
-                "entry_price": 1255.25,
-                "live_cmp": 1250.00,
-                "current_sl": 1230.14,
-                "original_sl": 1230.14,
-                "target_1": 1292.90,
-                "target_2": 1318.00,
-                "outlay_rupees": 99164.75,
-                "max_risk_rupees": 1983.30,
+                "qty": qty,
+                "buy_trigger": trigger,
+                "entry_price": trigger,
+                "live_cmp": c1.get("cmp", trigger),
+                "current_sl": sl,
+                "original_sl": sl,
+                "target_1": t1,
+                "target_2": t2,
+                "outlay_rupees": outlay,
+                "max_risk_rupees": max_risk,
                 "unrealized_pnl_rupees": 0.0,
                 "unrealized_pnl_pct": 0.0,
                 "trailing_stop_active": False,
-                "execution_phase": "⏳ PENDING TRIGGER (-0.42%)",
+                "execution_phase": "⏳ PENDING TRIGGER",
                 "status_tag": "PENDING_ENTRY"
             }]
             state["active_positions"] = positions
-        
+        elif not positions and not candidates:
+            # Initialize a default simulation candidate for interactive testing
+            from tradingagents.swing_opportunity.mid_small_universe import get_mid_small_metadata
+            sym = "POONAWALLA.NS"
+            meta = get_mid_small_metadata(sym)
+            trigger = 200.0
+            sl = 196.0
+            t1 = 202.4
+            t2 = 205.0
+            qty = int(self.capital / trigger)
+            outlay = qty * trigger
+            max_risk = qty * (trigger - sl)
+            positions = [{
+                "order_id": f"ORD-{datetime.datetime.now().strftime('%Y%m%d')}-01",
+                "symbol": sym,
+                "company": meta.get("name", "Poonawalla Fincorp Ltd."),
+                "priority_rank": "Rank #1 Simulation",
+                "type": "BUY LIMIT",
+                "qty": qty,
+                "buy_trigger": trigger,
+                "entry_price": trigger,
+                "live_cmp": trigger,
+                "current_sl": sl,
+                "original_sl": sl,
+                "target_1": t1,
+                "target_2": t2,
+                "outlay_rupees": outlay,
+                "max_risk_rupees": max_risk,
+                "unrealized_pnl_rupees": 0.0,
+                "unrealized_pnl_pct": 0.0,
+                "trailing_stop_active": False,
+                "execution_phase": "⏳ PENDING TRIGGER",
+                "status_tag": "PENDING_ENTRY"
+            }]
+            state["active_positions"] = positions
+
         target_pos = positions[0]
-        for p in positions:
-            if p["symbol"] == symbol:
-                target_pos = p
-                break
+        if symbol:
+            for p in positions:
+                if p["symbol"] == symbol:
+                    target_pos = p
+                    break
+        else:
+            symbol = target_pos["symbol"]
 
         if event_type == "TRIGGER_HIT":
             if target_pos:
@@ -294,29 +343,40 @@ class LiveEngineWorker:
         elif event_type == "TRAIL_STOP":
             if target_pos:
                 target_pos["trailing_stop_active"] = True
-                new_sl = round(target_pos["buy_trigger"] * 1.003, 2)
+                new_sl = round(target_pos["buy_trigger"] * 1.0025, 2)
                 target_pos["current_sl"] = new_sl
-                target_pos["live_cmp"] = target_pos["buy_trigger"] * 1.018
-                target_pos["execution_phase"] = "🔒 TRAILING STOP LOCKED (+0.30%)"
-                target_pos["unrealized_pnl_pct"] = +1.80
-                target_pos["unrealized_pnl_rupees"] = target_pos["outlay_rupees"] * 0.018
-                self.state_mgr.log_event(f"⚡ SIMULATION: Gain reached +1.80% on {symbol}! Trailing Stop locked at ₹{new_sl:,.2f} (+0.30%).")
+                target_pos["live_cmp"] = target_pos["buy_trigger"] * 1.006
+                target_pos["execution_phase"] = "🔒 TRAILING STOP LOCKED (+0.25%)"
+                target_pos["unrealized_pnl_pct"] = +0.60
+                target_pos["unrealized_pnl_rupees"] = round(target_pos["outlay_rupees"] * 0.006, 2)
+                self.state_mgr.log_event(f"⚡ SIMULATION: Gain reached +0.60% on {symbol}! Option A Trailing Stop locked at ₹{new_sl:,.2f} (+0.25%).")
 
         elif event_type == "TARGET_1":
             if target_pos:
                 target_pos["status_tag"] = "PARTIAL_PROFIT"
-                target_pos["execution_phase"] = "🎯 TARGET 1 HIT (+3.0%)"
+                target_pos["execution_phase"] = "🎯 TARGET 1 HIT (+1.2%)"
                 target_pos["live_cmp"] = target_pos["target_1"]
-                target_pos["unrealized_pnl_pct"] = +3.00
-                target_pos["unrealized_pnl_rupees"] = target_pos["outlay_rupees"] * 0.03
-                self.state_mgr.log_event(f"⚡ SIMULATION: Target 1 Hit on {symbol} at ₹{target_pos['target_1']:,.2f}! Partial exit booked (+3.0%).")
+                target_pos["unrealized_pnl_pct"] = +1.20
+                target_pos["unrealized_pnl_rupees"] = round(target_pos["outlay_rupees"] * 0.012, 2)
+                self.state_mgr.log_event(f"⚡ SIMULATION: Target 1 Hit on {symbol} at ₹{target_pos['target_1']:,.2f}! Partial exit booked (+1.2%).")
 
         elif event_type == "SQUARE_OFF":
             state["active_positions"] = []
             self.state_mgr.log_event("🚨 EMERGENCY SQUARE OFF EXECUTED: All open positions closed.")
 
+        # Recalculate account metrics for simulated position
+        init_cap = state.get("account_metrics", {}).get("initial_capital", 100000.0)
+        curr_cap = state.get("account_metrics", {}).get("current_capital", init_cap)
+        unrealized = sum(p.get("unrealized_pnl_rupees", 0.0) for p in state.get("active_positions", []))
+        outlay = sum(p.get("outlay_rupees", 0.0) for p in state.get("active_positions", []))
+        if "account_metrics" in state:
+            state["account_metrics"]["allocated_outlay"] = round(outlay, 2)
+            state["account_metrics"]["unrealized_pnl_rupees"] = round(unrealized, 2)
+            state["account_metrics"]["portfolio_value"] = round(curr_cap + unrealized, 2)
+            state["account_metrics"]["cash_balance"] = round(curr_cap - outlay, 2)
+
         self.state_mgr.save_state(state)
-        return self.process_live_tick()
+        return state
 
 
 def run_worker_loop():

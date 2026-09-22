@@ -40,10 +40,10 @@ class PreMarketTopGainerScreener:
         benchmark_ticker: str = "NIFTYMIDCAP150.NS",
         min_turnover_crores: float = 10.0,  # Mode 1 Validated Universe Floor (₹10 Cr)
         min_price: float = 30.0,
-        max_dist_52w_pct: float = 15.0,     # Mode 1 Proximity Gate (<= 15.0% to 52w high)
-        min_adr_pct: float = 2.2,           # Mode 1 ADR Mechanical Expansion Floor (>= 2.2%)
-        min_clv: float = 0.45,              # Mode 1 Close Location Value (Buyer Absorption >= 0.45)
-        max_5d_ret_pct: float = 10.0,       # Mode 1 Anti-Exhaustion Guardrail (5d Return <= 10.0%)
+        max_dist_52w_pct: float = 18.0,     # Option A Recovered Proximity Gate (<= 18.0% to 52w high)
+        min_adr_pct: float = 2.2,           # Option A ADR Mechanical Expansion Floor (>= 2.2%)
+        min_clv: float = 0.38,              # Option A Close Location Value (Buyer Absorption >= 0.38)
+        max_5d_ret_pct: float = 10.0,       # Option A Anti-Exhaustion Guardrail (5d Return <= 10.0%)
     ):
         self.tickers = tickers or NSE_MID_SMALL_TICKERS
         self.benchmark_ticker = benchmark_ticker
@@ -223,7 +223,7 @@ class PreMarketTopGainerScreener:
         nearest_resistance = float(higher_wicks.min())
         clean_air_margin_pct = ((nearest_resistance - curr_high) / curr_high) * 100.0
 
-        is_clean_air = clean_air_margin_pct >= 2.00
+        is_clean_air = clean_air_margin_pct >= 1.50
         return round(clean_air_margin_pct, 2), is_clean_air
 
     def check_hard_gates(
@@ -238,6 +238,9 @@ class PreMarketTopGainerScreener:
         """Tier 1: Non-negotiable hard disqualification gates (Pass/Fail)."""
         meta = get_mid_small_metadata(ticker)
         gate_details = {}
+        if len(close) < 20 or len(high) < 20 or len(low) < 20 or len(vol) < 20:
+            msg = "Disqualified: Insufficient historical price data (< 20 sessions)."
+            return (False, msg, gate_details) if return_details else (False, msg)
 
         # Gate 1: NSE Series & Surveillance
         if meta.get("series") != "EQ":
@@ -308,8 +311,8 @@ class PreMarketTopGainerScreener:
         gate_details["is_nr7"] = is_nr7
         gate_details["is_inside_day"] = is_inside_day
 
-        if vol_ratio > 0.80 and not is_nr7 and not is_inside_day:
-            msg = f"Disqualified: No volatility dry-up (Vol ratio {vol_ratio:.2f} > 0.80 with no NR7/Inside day)"
+        if vol_ratio > 0.90 and not is_nr7 and not is_inside_day:
+            msg = f"Disqualified: No volatility dry-up (Vol ratio {vol_ratio:.2f} > 0.90 with no NR7/Inside day)"
             return (False, msg, gate_details) if return_details else (False, msg)
 
         # Gate 9: Clean Air & Supply Overhead Filter
@@ -317,7 +320,7 @@ class PreMarketTopGainerScreener:
         gate_details["clean_air_margin_pct"] = clean_air_margin
         gate_details["is_clean_air"] = is_clean_air
         if not is_clean_air:
-            msg = f"Disqualified: Trapped overhead resistance within {clean_air_margin:.2f}% (< 2.0% Clean Air gate)"
+            msg = f"Disqualified: Trapped overhead resistance within {clean_air_margin:.2f}% (< 1.5% Clean Air gate)"
             return (False, msg, gate_details) if return_details else (False, msg)
 
         # Gate 10: 14-Day ADR Expansion Floor (>= min_adr_pct)
