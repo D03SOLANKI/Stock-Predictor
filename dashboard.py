@@ -1162,29 +1162,53 @@ def main():
 
     with tab_live:
         state_candidates = SessionStateManager().load_state().get("candidates", [])
+
         if run_triggered:
             with st.spinner("Analyzing market microstructure, coiling patterns, and volume footprints..."):
                 if "Pre-Market" in active_mode or "Mode 1" in active_mode:
                     screener = PreMarketTopGainerScreener(min_turnover_crores=config["min_turnover"])
                     results = screener.scan(top_n=config["top_n"], bypass_regime_halt=config["bypass_regime"])
-                    display_premarket_results(results, config["capital"], config["risk_pct"])
+                    st.session_state["active_scan_results"] = results
+                    try:
+                        SessionStateManager().update_candidates(
+                            results.get("candidates", []),
+                            results.get("regime", {}),
+                            results.get("macro_gate")
+                        )
+                    except Exception as err:
+                        pass
                 else:
                     engine = SwingOpportunityEngine(
                         account_capital=config["capital"],
                         risk_per_trade_pct=config["risk_pct"],
                     )
                     opps = engine.run(top_n=config["top_n"])
-                    display_swing_results(opps)
-        elif state_candidates:
-            regime_info = SessionStateManager().load_state().get("session_metadata", {})
-            mock_results = {
-                "regime": {"regime": regime_info.get("macro_regime", "CONSOLIDATION_RANGE"), "message": "NIFTY Midcap 150 in intermediate consolidation.", "risk_multiplier": 1.0},
-                "macro_gate": regime_info.get("macro_gate"),
-                "candidates": state_candidates
-            }
-            display_premarket_results(mock_results, config["capital"], config["risk_pct"])
+                    st.session_state["active_swing_results"] = opps
+
+        # Persistent Display Logic (Never disappears on rerun, tab change, or interval select)
+        if "Pre-Market" in active_mode or "Mode 1" in active_mode:
+            current_results = st.session_state.get("active_scan_results")
+            if not current_results and state_candidates:
+                regime_info = SessionStateManager().load_state().get("session_metadata", {})
+                current_results = {
+                    "regime": {"regime": regime_info.get("macro_regime", "CONSOLIDATION_RANGE"), "message": "NIFTY Midcap 150 in intermediate consolidation.", "risk_multiplier": 1.0},
+                    "macro_gate": regime_info.get("macro_gate"),
+                    "candidates": state_candidates
+                }
+                st.session_state["active_scan_results"] = current_results
+
+            if current_results and current_results.get("candidates"):
+                display_premarket_results(current_results, config["capital"], config["risk_pct"])
+            elif current_results and current_results.get("halted"):
+                st.error(f"🔴 **System Halted by Regime Gate**: {current_results.get('reason')}")
+            else:
+                st.info("⏳ **Standing by for Pre-Market Scan**. Click **'🚀 RUN LIVE MARKET SCAN'** above to run an instant discovery scan right now.")
         else:
-            st.info("⏳ **Standing by for Monday 8:45 AM Pre-Market Scan**. The discovery engine will automatically analyze the 97 mid/small-cap universe and isolate the Top 3 candidates on Monday morning. Click **'🚀 RUN LIVE MARKET SCAN'** above to run an instant discovery scan right now.")
+            swing_res = st.session_state.get("active_swing_results")
+            if swing_res:
+                display_swing_results(swing_res)
+            else:
+                st.info("Click **'🚀 RUN LIVE MARKET SCAN'** to discover NIFTY 50 swing setups.")
 
     with tab_analytics:
         display_backtest_analytics()
