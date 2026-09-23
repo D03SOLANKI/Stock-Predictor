@@ -22,6 +22,10 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit.components.v1 as components
 import yfinance as yf
+try:
+    from streamlit_autorefresh import st_autorefresh
+except ImportError:
+    st_autorefresh = None
 
 
 # Configure page layout
@@ -959,6 +963,9 @@ def display_backtest_analytics():
 
 def display_live_execution_controls(capital, risk_pct):
     """Render live order execution mode switcher, real-time tick engine, and paper order monitor."""
+    if st_autorefresh is not None:
+        st_autorefresh(interval=10000, key="live_order_monitor_autorefresh")
+
     worker = LiveEngineWorker(capital=capital, risk_pct=risk_pct)
     state = worker.process_live_tick()
 

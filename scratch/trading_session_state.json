@@ -2,7 +2,7 @@
   "session_metadata": {
     "session_id": "SESS-20260918",
     "date": "2026-09-23",
-    "last_updated": "2026-09-23 09:58:36 IST",
+    "last_updated": "2026-09-23 12:55:31 IST",
     "market_status": "LIVE_MARKET",
     "macro_regime": "CONSOLIDATION_RANGE",
     "macro_gate": {
@@ -13,16 +13,16 @@
   "account_metrics": {
     "initial_capital": 100000.0,
     "current_capital": 100000.0,
-    "cash_balance": 100000.0,
-    "allocated_outlay": 0.0,
-    "unrealized_pnl_rupees": 0.0,
-    "unrealized_pnl_pct": 0.0,
+    "cash_balance": 24344.72,
+    "allocated_outlay": 75655.28,
+    "unrealized_pnl_rupees": 99.82,
+    "unrealized_pnl_pct": 0.1,
     "daily_realized_pnl_rupees": 0,
     "total_realized_pnl_rupees": 0,
-    "portfolio_value": 100000.0,
+    "portfolio_value": 100099.82,
     "risk_per_trade_pct": 2.0,
     "max_risk_allowed_rupees": 2000.0,
-    "current_risk_exposure_pct": 0.0
+    "current_risk_exposure_pct": 75.58
   },
   "performance_kpis": {
     "total_trades": 240,
@@ -47,7 +47,7 @@
       "composite_score": 32.4,
       "rank": 1,
       "sector": "NSE Equity",
-      "cmp": 3271.6,
+      "cmp": 3293.7,
       "high": 3289.36,
       "low": 3204.6,
       "buy_above_trigger": 3289.36,
@@ -66,19 +66,19 @@
       "type": "BUY STOP-LIMIT",
       "qty": 23,
       "buy_trigger": 3289.36,
-      "entry_price": 3289.36,
-      "live_cmp": 3271.6,
+      "entry_price": 3293.7,
+      "live_cmp": 3293.7,
       "current_sl": 3204.6,
       "original_sl": 3204.6,
       "target_1": 3310.0,
       "target_2": 3350.0,
       "outlay_rupees": 75655.28,
       "max_risk_rupees": 1949.48,
-      "unrealized_pnl_rupees": 0.0,
-      "unrealized_pnl_pct": 0.0,
+      "unrealized_pnl_rupees": 99.82,
+      "unrealized_pnl_pct": 0.13,
       "trailing_stop_active": false,
-      "execution_phase": "\u23f3 PENDING 9:30 AM MARKET OPEN (-0.54%)",
-      "status_tag": "PENDING_ENTRY"
+      "execution_phase": "\ud83d\udfe2 ORDER FILLED / EXECUTING",
+      "status_tag": "ACTIVE_LONG"
     }
   ],
   "closed_trades": [],

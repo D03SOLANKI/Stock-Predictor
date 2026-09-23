@@ -27,12 +27,19 @@ logger = logging.getLogger(__name__)
 
 def is_live_market_session() -> bool:
     """Check if current time is within NSE live trading hours (9:15 AM - 3:30 PM IST Mon-Fri)."""
-    now = datetime.datetime.now()
-    if now.weekday() >= 5:  # Saturday or Sunday
+    try:
+        import pytz
+        ist = pytz.timezone("Asia/Kolkata")
+        now_ist = datetime.datetime.now(ist)
+    except Exception:
+        utc_now = datetime.datetime.now(datetime.timezone.utc)
+        now_ist = utc_now + datetime.timedelta(hours=5, minutes=30)
+
+    if now_ist.weekday() >= 5:  # Saturday or Sunday
         return False
-    start_time = now.replace(hour=9, minute=15, second=0, microsecond=0)
-    end_time = now.replace(hour=15, minute=30, second=0, microsecond=0)
-    return start_time <= now <= end_time
+    start_time = now_ist.replace(hour=9, minute=15, second=0, microsecond=0)
+    end_time = now_ist.replace(hour=15, minute=30, second=0, microsecond=0)
+    return start_time <= now_ist <= end_time
 
 
 class LiveEngineWorker:
@@ -148,16 +155,16 @@ class LiveEngineWorker:
 
             # 1. Check Pending Entry Trigger
             if pos["status_tag"] == "PENDING_ENTRY":
-                if is_market_open and cmp_price >= trigger:
+                if cmp_price >= trigger:
                     pos["status_tag"] = "ACTIVE_LONG"
                     pos["entry_price"] = cmp_price
                     pos["execution_phase"] = "🟢 ORDER FILLED / EXECUTING"
                     self.state_mgr.log_event(
-                        f"🎯 9:30 AM Trigger Hit for {sym} at ₹{cmp_price:,.2f}! Virtual Order FILLED ({qty} shares)."
+                        f"🎯 Trigger Hit for {sym} at ₹{cmp_price:,.2f} (Trigger: ₹{trigger:,.2f})! Virtual Order FILLED ({qty} shares)."
                     )
                     modified = True
                 else:
-                    pos["execution_phase"] = f"⏳ PENDING 9:30 AM MARKET OPEN ({dist_trigger_pct:+.2f}%)"
+                    pos["execution_phase"] = f"⏳ PENDING TRIGGER ({dist_trigger_pct:+.2f}%)"
 
             # 2. Check Active Long Execution Logic
             if pos["status_tag"] in ["ACTIVE_LONG", "PARTIAL_PROFIT"]:
