@@ -15,6 +15,7 @@ Implements:
   Rank Score = Clean Air (35%) + RS Alpha (35%) + Catalyst Score (20%) + Vol Contraction (10%)
 """
 
+import datetime
 import logging
 from typing import Dict, Any, List, Optional, Tuple
 import numpy as np
@@ -223,7 +224,7 @@ class PreMarketTopGainerScreener:
         nearest_resistance = float(higher_wicks.min())
         clean_air_margin_pct = ((nearest_resistance - curr_high) / curr_high) * 100.0
 
-        is_clean_air = clean_air_margin_pct >= 1.50
+        is_clean_air = clean_air_margin_pct >= 0.0
         return round(clean_air_margin_pct, 2), is_clean_air
 
     def check_hard_gates(
@@ -315,12 +316,12 @@ class PreMarketTopGainerScreener:
             msg = f"Disqualified: No volatility dry-up (Vol ratio {vol_ratio:.2f} > 0.90 with no NR7/Inside day)"
             return (False, msg, gate_details) if return_details else (False, msg)
 
-        # Gate 9: Clean Air & Supply Overhead Filter
+        # Gate 9: Clean Air & Supply Overhead Filter (Margin scored in Tier 2)
         clean_air_margin, is_clean_air = self.calculate_clean_air_margin(high, close, lookback=20)
-        gate_details["clean_air_margin_pct"] = clean_air_margin
+        gate_details["clean_air_margin_pct"] = max(0.0, clean_air_margin)
         gate_details["is_clean_air"] = is_clean_air
-        if not is_clean_air:
-            msg = f"Disqualified: Trapped overhead resistance within {clean_air_margin:.2f}% (< 1.5% Clean Air gate)"
+        if clean_air_margin < -0.5:
+            msg = f"Disqualified: Inverted resistance structure ({clean_air_margin:.2f}%)."
             return (False, msg, gate_details) if return_details else (False, msg)
 
         # Gate 10: 14-Day ADR Expansion Floor (>= min_adr_pct)
@@ -470,18 +471,25 @@ class PreMarketTopGainerScreener:
                 "reason": macro_gate["message"],
             }
 
-        bm_close = self._extract_series(df_daily, self.benchmark_ticker, "Close")
+        # Robust handling for Live Market hours:
+        # Pre-market technical gates & patterns (20 EMA, 52w high, VDU, ADR, CLV) evaluate on
+        # the last fully completed closed daily session, while updating candidates with real-time CMP.
+        today_date = datetime.date.today()
+        is_live_session = len(df_daily.index) > 0 and df_daily.index[-1].date() == today_date
+        df_setup = df_daily.iloc[:-1] if (is_live_session and len(df_daily) >= 21) else df_daily
+
+        bm_close = self._extract_series(df_setup, self.benchmark_ticker, "Close")
         catalyst_map = self.catalyst_agent.scan_universe_catalysts(self.tickers, known_catalysts)
 
         evaluated_candidates = []
         disqualified_count = 0
 
         for ticker in self.tickers:
-            close_s = self._extract_series(df_daily, ticker, "Close")
-            high_s = self._extract_series(df_daily, ticker, "High")
-            low_s = self._extract_series(df_daily, ticker, "Low")
-            open_s = self._extract_series(df_daily, ticker, "Open")
-            vol_s = self._extract_series(df_daily, ticker, "Volume")
+            close_s = self._extract_series(df_setup, ticker, "Close")
+            high_s = self._extract_series(df_setup, ticker, "High")
+            low_s = self._extract_series(df_setup, ticker, "Low")
+            open_s = self._extract_series(df_setup, ticker, "Open")
+            vol_s = self._extract_series(df_setup, ticker, "Volume")
 
             if close_s is None or len(close_s) < 20:
                 continue
@@ -496,6 +504,12 @@ class PreMarketTopGainerScreener:
                 candidate = self.score_candidate(
                     ticker, close_s, high_s, low_s, open_s, vol_s, bm_close, gate_details, cat_info
                 )
+                # If market is actively open, attach live real-time price & previous close
+                if is_live_session:
+                    full_close = self._extract_series(df_daily, ticker, "Close")
+                    if full_close is not None and len(full_close) > 0:
+                        candidate["close"] = round(float(full_close.iloc[-1]), 2)
+                        candidate["prev_close"] = round(float(close_s.iloc[-1]), 2)
                 evaluated_candidates.append(candidate)
             except Exception as exc:
                 logger.warning("Error scoring %s: %s", ticker, exc)

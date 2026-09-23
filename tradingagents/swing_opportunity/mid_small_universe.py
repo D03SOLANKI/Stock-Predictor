@@ -68,12 +68,12 @@ NSE_MID_SMALL_UNIVERSE: Dict[str, Dict[str, Any]] = {
     "ASTRAL.NS": {"name": "Astral Ltd.", "sector": "Building Products / Pipes", "tier": "Midcap", "series": "EQ", "circuit_band": 20},
     "SUPREMEIND.NS": {"name": "Supreme Industries Ltd.", "sector": "Plastic Products", "tier": "Midcap", "series": "EQ", "circuit_band": 20},
     "KEC.NS": {"name": "KEC International Ltd.", "sector": "T&D Infrastructure", "tier": "Midcap", "series": "EQ", "circuit_band": 20},
-    "KALPATPOWR.NS": {"name": "Kalpataru Projects International", "sector": "Engineering / Infra", "tier": "Midcap", "series": "EQ", "circuit_band": 20},
+    "KPIL.NS": {"name": "Kalpataru Projects International", "sector": "Engineering / Infra", "tier": "Midcap", "series": "EQ", "circuit_band": 20},
     "VOLTAS.NS": {"name": "Voltas Ltd.", "sector": "Consumer Electricals", "tier": "Midcap", "series": "EQ", "circuit_band": 20},
     "BLUESTARCO.NS": {"name": "Blue Star Ltd.", "sector": "Consumer Electricals", "tier": "Midcap", "series": "EQ", "circuit_band": 20},
-    "HBLPOWER.NS": {"name": "HBL Power Systems Ltd.", "sector": "Batteries & Electronic Systems", "tier": "Smallcap", "series": "EQ", "circuit_band": 20},
+    "POLYCAB.NS": {"name": "Polycab India Ltd.", "sector": "Cables & Wires", "tier": "Midcap", "series": "EQ", "circuit_band": 20},
     "EXIDEIND.NS": {"name": "Exide Industries Ltd.", "sector": "Batteries & Storage", "tier": "Midcap", "series": "EQ", "circuit_band": 20},
-    "AMARAJABAT.NS": {"name": "Amara Raja Energy & Mobility Ltd.", "sector": "Batteries & Storage", "tier": "Midcap", "series": "EQ", "circuit_band": 20},
+    "ARE&M.NS": {"name": "Amara Raja Energy & Mobility Ltd.", "sector": "Batteries & Storage", "tier": "Midcap", "series": "EQ", "circuit_band": 20},
 
     # Real Estate & Urban Growth
     "PRESTIGE.NS": {"name": "Prestige Estates Projects Ltd.", "sector": "Real Estate", "tier": "Midcap", "series": "EQ", "circuit_band": 20},
@@ -119,7 +119,7 @@ NSE_MID_SMALL_UNIVERSE: Dict[str, Dict[str, Any]] = {
     "GLENMARK.NS": {"name": "Glenmark Pharmaceuticals Ltd.", "sector": "Pharmaceuticals", "tier": "Midcap", "series": "EQ", "circuit_band": 20},
     "IPCALAB.NS": {"name": "IPCA Laboratories Ltd.", "sector": "Pharmaceuticals", "tier": "Midcap", "series": "EQ", "circuit_band": 20},
     "JBCHEPHARM.NS": {"name": "J.B. Chemicals & Pharmaceuticals", "sector": "Pharmaceuticals", "tier": "Smallcap", "series": "EQ", "circuit_band": 20},
-    "SUVENPHAR.NS": {"name": "Suven Pharmaceuticals Ltd.", "sector": "CDMO / Pharma", "tier": "Smallcap", "series": "EQ", "circuit_band": 20},
+    "SUVEN.NS": {"name": "Suven Life Sciences Ltd.", "sector": "CDMO / Pharma", "tier": "Smallcap", "series": "EQ", "circuit_band": 20},
 
     # Consumer & Retail Momentum
     "TRENT.NS": {"name": "Trent Ltd.", "sector": "Retail / Apparel", "tier": "Midcap", "series": "EQ", "circuit_band": 20},

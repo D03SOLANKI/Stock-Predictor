@@ -1,0 +1,30 @@
+NSE PRE-MARKET SCAN - 2026-09-23 (8:45 AM IST)
+=======================================================
+Market Regime: CONSOLIDATION_RANGE
+
+#1 PRIMARY PICK: Multi Commodity Exchange of India (NSE:MCX)
+  Score   : 32.4/100  |  Sector: Commodity Exchanges
+  CMP     : Rs3279.20
+  TRIGGER : Rs3293.10  <- Buy above this
+  HARD SL : Rs3227.24  (-2.0%)
+  TARGET 1: Rs3332.62  (+1.2%)
+  TARGET 2: Rs3375.43  (+2.5%)
+  Shares  : 30 @ Rs98,793 outlay
+
+#2 FALLBACK PICK: Navin Fluorine International (NSE:NAVINFLUOR)
+  Score   : 27.4/100  |  Sector: Specialty Chemicals
+  CMP     : Rs8435.00
+  TRIGGER : Rs8602.60  <- Buy above this
+  HARD SL : Rs8430.55  (-2.0%)
+  TARGET 1: Rs8705.83  (+1.2%)
+  TARGET 2: Rs8817.66  (+2.5%)
+  Shares  : 11 @ Rs94,629 outlay
+
+#3 STANDBY RUNNER: Sona BLW Precision Forgings (NSE:SONACOMS)
+  Score   : 25.9/100  |  Sector: EV Auto Components
+  CMP     : Rs808.65
+  TRIGGER : Rs809.85  <- Buy above this
+  HARD SL : Rs793.65  (-2.0%)
+  TARGET 1: Rs819.57  (+1.2%)
+  TARGET 2: Rs830.10  (+2.5%)
+  Shares  : 123 @ Rs99,612 outlay
