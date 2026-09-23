@@ -87,6 +87,46 @@ class LiveEngineWorker:
         total_allocated_outlay = 0.0
         modified = False
 
+        # Auto-stage Rank #1 Primary Pick if no active positions
+        if not active_positions and candidates:
+            c1 = candidates[0]
+            sym = c1["ticker"]
+            trigger = c1["buy_trigger"]
+            sl = c1["stop_loss"]
+            t1 = c1["target_1"]
+            t2 = c1["target_2"]
+            cap = account.get("initial_capital", self.capital)
+            risk_pct = account.get("risk_per_trade_pct", self.risk_pct)
+            risk_budget = cap * (risk_pct / 100.0)
+            risk_per_share = max(trigger - sl, trigger * 0.02)
+            qty = max(1, int(risk_budget / risk_per_share))
+            outlay = round(qty * trigger, 2)
+            active_positions = [{
+                "order_id": f"ORD-{datetime.datetime.now().strftime('%Y%m%d')}-01",
+                "symbol": sym,
+                "company": c1.get("stock_name", sym),
+                "priority_rank": "Rank #1 Primary",
+                "type": "BUY STOP-LIMIT",
+                "qty": qty,
+                "buy_trigger": trigger,
+                "entry_price": trigger,
+                "live_cmp": live_quotes.get(sym, c1.get("cmp", trigger)),
+                "current_sl": sl,
+                "original_sl": sl,
+                "target_1": t1,
+                "target_2": t2,
+                "outlay_rupees": outlay,
+                "max_risk_rupees": round(qty * risk_per_share, 2),
+                "unrealized_pnl_rupees": 0.0,
+                "unrealized_pnl_pct": 0.0,
+                "trailing_stop_active": False,
+                "execution_phase": "⏳ PENDING TRIGGER",
+                "status_tag": "PENDING_ENTRY"
+            }]
+            state["active_positions"] = active_positions
+            self.state_mgr.log_event(f"📋 Live Engine: Staged {sym} order (Trigger: ₹{trigger:,.2f} | {qty} shs).")
+            modified = True
+
         # Process Active Positions
         for pos in active_positions:
             sym = pos["symbol"]

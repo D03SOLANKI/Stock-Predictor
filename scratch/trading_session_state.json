@@ -1,16 +1,12 @@
 {
   "session_metadata": {
     "session_id": "SESS-20260918",
-    "date": "2026-09-22",
-    "last_updated": "2026-09-22 08:28:41 IST",
+    "date": "2026-09-23",
+    "last_updated": "2026-09-23 09:58:36 IST",
     "market_status": "LIVE_MARKET",
     "macro_regime": "CONSOLIDATION_RANGE",
     "macro_gate": {
-      "status": "PASS_MACRO_GATE",
-      "is_qualified": true,
-      "gap_pct": 0.2,
-      "cutoff_pct": -0.5,
-      "message": "NIFTY Midcap 150 opened at +0.20% (>= -0.50% Macro Gate). Green light."
+      "status": "PASS"
     },
     "strategy_profile": "Mode 1: Top 3 Queue + Rec 1 Macro Gate + Rec 2 Volume Gate + Rec 3 Trailing Stop (No 50-SMA)"
   },
@@ -39,8 +35,52 @@
     "sharpe_ratio": 6.51,
     "sortino_ratio": 20.14
   },
-  "candidates": [],
-  "active_positions": [],
+  "candidates": [
+    {
+      "ticker": "MCX.NS",
+      "stock_name": "Multi Commodity Exchange of India",
+      "close": 3273.0,
+      "buy_trigger": 3289.36,
+      "stop_loss": 3204.6,
+      "target_1": 3310.0,
+      "target_2": 3350.0,
+      "composite_score": 32.4,
+      "rank": 1,
+      "sector": "NSE Equity",
+      "cmp": 3271.6,
+      "high": 3289.36,
+      "low": 3204.6,
+      "buy_above_trigger": 3289.36,
+      "clean_air_margin_pct": 5.0,
+      "rs_alpha": 0.0,
+      "avg_turnover_cr_20d": 15.0,
+      "status": "RANK_1_PRIMARY"
+    }
+  ],
+  "active_positions": [
+    {
+      "order_id": "ORD-20260923-01",
+      "symbol": "MCX.NS",
+      "company": "Multi Commodity Exchange of India",
+      "priority_rank": "Rank #1 Primary",
+      "type": "BUY STOP-LIMIT",
+      "qty": 23,
+      "buy_trigger": 3289.36,
+      "entry_price": 3289.36,
+      "live_cmp": 3271.6,
+      "current_sl": 3204.6,
+      "original_sl": 3204.6,
+      "target_1": 3310.0,
+      "target_2": 3350.0,
+      "outlay_rupees": 75655.28,
+      "max_risk_rupees": 1949.48,
+      "unrealized_pnl_rupees": 0.0,
+      "unrealized_pnl_pct": 0.0,
+      "trailing_stop_active": false,
+      "execution_phase": "\u23f3 PENDING 9:30 AM MARKET OPEN (-0.54%)",
+      "status_tag": "PENDING_ENTRY"
+    }
+  ],
   "closed_trades": [],
   "event_logs": [
     "[22:38:05 IST] \ud83d\udfe2 Reactive session state manager initialized.",
