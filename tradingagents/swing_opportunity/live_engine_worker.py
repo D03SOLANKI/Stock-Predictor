@@ -70,6 +70,33 @@ class LiveEngineWorker:
         state = self.state_mgr.load_state()
         candidates = state.get("candidates", [])
         active_positions = state.get("active_positions", [])
+
+        # Auto-sync with results/latest_scan.json if date changed or candidates empty
+        latest_scan_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            "results",
+            "latest_scan.json"
+        )
+        if os.path.exists(latest_scan_path):
+            try:
+                with open(latest_scan_path, "r", encoding="utf-8") as f:
+                    scan_data = json.load(f)
+                scan_date = scan_data.get("scan_date")
+                curr_date = state.get("session_metadata", {}).get("date")
+                if scan_date and (curr_date != scan_date or not candidates):
+                    regime = scan_data.get("regime", {})
+                    scan_cands = scan_data.get("candidates", [])
+                    if scan_cands:
+                        state = self.state_mgr.update_candidates(
+                            candidates=scan_cands,
+                            regime=regime,
+                            macro_gate=regime.get("macro_gate", {})
+                        )
+                        candidates = state.get("candidates", [])
+                        active_positions = state.get("active_positions", [])
+            except Exception as exc:
+                logger.debug("Auto-sync latest_scan error: %s", exc)
+
         closed_trades = state.get("closed_trades", [])
         account = state.get("account_metrics", {})
         kpis = state.get("performance_kpis", {})

@@ -145,7 +145,13 @@ class SessionStateManager:
     def update_candidates(self, candidates: List[Dict[str, Any]], regime: Dict[str, Any], macro_gate: Dict[str, Any]) -> Dict[str, Any]:
         """Update active candidates, rankings, and macro status in state."""
         state = self.load_state()
-        state["session_metadata"]["date"] = datetime.datetime.now().strftime("%Y-%m-%d")
+        today_date = datetime.datetime.now().strftime("%Y-%m-%d")
+        if state.get("session_metadata", {}).get("date") != today_date:
+            # New trading day: clear stale unexecuted pending orders so today's pick is staged fresh
+            state["active_positions"] = [p for p in state.get("active_positions", []) if p.get("execution_phase") == "ACTIVE_LONG"]
+            state.setdefault("session_metadata", {})["session_id"] = f"SESS-{datetime.datetime.now().strftime('%Y%m%d')}"
+
+        state["session_metadata"]["date"] = today_date
         state["session_metadata"]["macro_regime"] = regime.get("regime", "CONSOLIDATION_RANGE")
         if macro_gate:
             state["session_metadata"]["macro_gate"] = macro_gate
