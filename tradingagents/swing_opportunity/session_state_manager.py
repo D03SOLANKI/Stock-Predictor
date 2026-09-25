@@ -110,16 +110,42 @@ class SessionStateManager:
         return default_state
 
     def load_state(self) -> Dict[str, Any]:
-        """Load session state from disk with robust error recovery."""
+        """Load session state from disk with robust error recovery and automatic latest_scan synchronization."""
         if not os.path.exists(self.state_file):
-            return self.initialize_default_state()
-        try:
-            with open(self.state_file, "r", encoding="utf-8") as f:
-                state = json.load(f)
-            return state
-        except Exception as exc:
-            logger.warning("Error loading session state: %s. Re-initializing...", exc)
-            return self.initialize_default_state()
+            state = self.initialize_default_state()
+        else:
+            try:
+                with open(self.state_file, "r", encoding="utf-8") as f:
+                    state = json.load(f)
+            except Exception as exc:
+                logger.warning("Error loading session state: %s. Re-initializing...", exc)
+                state = self.initialize_default_state()
+
+        # Automatic sync with results/latest_scan.json (cloud/local single source of truth)
+        latest_scan_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            "results",
+            "latest_scan.json"
+        )
+        if os.path.exists(latest_scan_path):
+            try:
+                with open(latest_scan_path, "r", encoding="utf-8") as f:
+                    scan_data = json.load(f)
+                scan_date = scan_data.get("scan_date")
+                scan_cands = scan_data.get("candidates", [])
+                curr_date = state.get("session_metadata", {}).get("date")
+                curr_cands = state.get("candidates", [])
+                curr_top = curr_cands[0].get("ticker") if curr_cands else None
+                new_top = scan_cands[0].get("ticker") if scan_cands else None
+
+                if scan_cands and (curr_date != scan_date or not curr_cands or curr_top != new_top):
+                    regime = scan_data.get("regime", {})
+                    macro_gate = regime.get("macro_gate", {})
+                    state = self.update_candidates(candidates=scan_cands, regime=regime, macro_gate=macro_gate)
+            except Exception as exc:
+                logger.debug("Failed auto-sync with latest_scan in load_state: %s", exc)
+
+        return state
 
     def save_state(self, state: Dict[str, Any]) -> None:
         """Atomically persist state to disk."""
@@ -214,8 +240,14 @@ class SessionStateManager:
 
         state["candidates"] = formatted_candidates
 
-        # Auto-stage Rank #1 Primary Pick into Live Order Monitor if no active positions
-        if formatted_candidates and not state.get("active_positions"):
+        # Auto-stage Rank #1 Primary Pick into Live Order Monitor
+        # Stage if no active positions, OR if existing active position is unexecuted pending entry for a different symbol
+        current_active = state.get("active_positions", [])
+        has_running_execution = any(
+            p.get("status_tag") == "ACTIVE_LONG" or "FILLED" in str(p.get("execution_phase")) or "TRAILING" in str(p.get("execution_phase"))
+            for p in current_active
+        )
+        if formatted_candidates and not has_running_execution:
             c1 = formatted_candidates[0]
             trigger = c1["buy_trigger"]
             sl = c1["stop_loss"]

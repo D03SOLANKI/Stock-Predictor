@@ -121,30 +121,44 @@ class LiveEngineWorker:
         total_allocated_outlay = 0.0
         modified = False
 
-        # Auto-stage Rank #1 Primary Pick if no active positions
-        if not active_positions and candidates:
-            c1 = candidates[0]
-            sym = c1["ticker"]
-            trigger = c1["buy_trigger"]
-            sl = c1["stop_loss"]
-            t1 = c1["target_1"]
-            t2 = c1["target_2"]
+        # Auto-stage candidate: priority to Rank #1, then Fallback if previous traded today
+        today_prefix = f"ORD-{datetime.datetime.now().strftime('%Y%m%d')}"
+        closed_symbols_today = {t.get("symbol") for t in closed_trades if str(t.get("order_id", "")).startswith(today_prefix)}
+        available_candidates = [c for c in candidates if c.get("ticker") not in closed_symbols_today]
+
+        needs_staging = False
+        if available_candidates:
+            next_cand = available_candidates[0]
+            if not active_positions:
+                needs_staging = True
+            elif len(active_positions) == 1 and active_positions[0].get("status_tag") == "PENDING_ENTRY" and active_positions[0].get("symbol") != next_cand["ticker"]:
+                needs_staging = True
+
+        if needs_staging and available_candidates:
+            c_stage = available_candidates[0]
+            sym = c_stage["ticker"]
+            priority_rank = "Rank #1 Primary" if c_stage == candidates[0] else ("Rank #2 Fallback" if len(candidates) > 1 and c_stage == candidates[1] else "Rank #3 Standby")
+            trigger = c_stage["buy_trigger"]
+            sl = c_stage["stop_loss"]
+            t1 = c_stage["target_1"]
+            t2 = c_stage["target_2"]
             cap = account.get("initial_capital", self.capital)
             risk_pct = account.get("risk_per_trade_pct", self.risk_pct)
             risk_budget = cap * (risk_pct / 100.0)
             risk_per_share = max(trigger - sl, trigger * 0.02)
             qty = max(1, int(risk_budget / risk_per_share))
             outlay = round(qty * trigger, 2)
+            order_num = len(closed_symbols_today) + 1
             active_positions = [{
-                "order_id": f"ORD-{datetime.datetime.now().strftime('%Y%m%d')}-01",
+                "order_id": f"{today_prefix}-{order_num:02d}",
                 "symbol": sym,
-                "company": c1.get("stock_name", sym),
-                "priority_rank": "Rank #1 Primary",
+                "company": c_stage.get("stock_name", sym),
+                "priority_rank": priority_rank,
                 "type": "BUY STOP-LIMIT",
                 "qty": qty,
                 "buy_trigger": trigger,
                 "entry_price": trigger,
-                "live_cmp": live_quotes.get(sym, c1.get("cmp", trigger)),
+                "live_cmp": live_quotes.get(sym, c_stage.get("cmp", trigger)),
                 "current_sl": sl,
                 "original_sl": sl,
                 "target_1": t1,
@@ -158,7 +172,7 @@ class LiveEngineWorker:
                 "status_tag": "PENDING_ENTRY"
             }]
             state["active_positions"] = active_positions
-            self.state_mgr.log_event(f"📋 Live Engine: Staged {sym} order (Trigger: ₹{trigger:,.2f} | {qty} shs).")
+            self.state_mgr.log_event(f"📋 Live Engine: Staged {priority_rank} {sym} order (Trigger: ₹{trigger:,.2f} | {qty} shs).")
             modified = True
 
         # Process Active Positions
