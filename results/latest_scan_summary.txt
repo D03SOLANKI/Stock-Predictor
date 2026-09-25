@@ -1,30 +1,30 @@
-NSE PRE-MARKET SCAN - 2026-09-24 (8:45 AM IST)
+NSE PRE-MARKET SCAN - 2026-09-25 (8:45 AM IST)
 =======================================================
 Market Regime: CONSOLIDATION_RANGE
 
-#1 PRIMARY PICK: Titagarh Rail Systems Ltd. (NSE:TITAGARH)
-  Score   : 31.5/100  |  Sector: Railways Wagons
-  CMP     : Rs831.80
-  TRIGGER : Rs846.55  <- Buy above this
-  HARD SL : Rs829.62  (-2.0%)
-  TARGET 1: Rs856.71  (+1.2%)
-  TARGET 2: Rs867.71  (+2.5%)
-  Shares  : 118 @ Rs99,893 outlay
+#1 PRIMARY PICK: R R Kabel Ltd. (NSE:RRKABEL)
+  Score   : 42.5/100  |  Sector: Cables & Wires
+  CMP     : Rs2552.80
+  TRIGGER : Rs2547.65  <- Buy above this
+  HARD SL : Rs2496.70  (-2.0%)
+  TARGET 1: Rs2578.22  (+1.2%)
+  TARGET 2: Rs2611.34  (+2.5%)
+  Shares  : 39 @ Rs99,358 outlay
 
 #2 FALLBACK PICK: Cyient Ltd. (NSE:CYIENT)
-  Score   : 29.5/100  |  Sector: Engineering IT
-  CMP     : Rs1064.20
+  Score   : 35.1/100  |  Sector: Engineering IT
+  CMP     : Rs1065.10
   TRIGGER : Rs1088.80  <- Buy above this
   HARD SL : Rs1067.02  (-2.0%)
   TARGET 1: Rs1101.87  (+1.2%)
   TARGET 2: Rs1116.02  (+2.5%)
   Shares  : 91 @ Rs99,081 outlay
 
-#3 STANDBY RUNNER: Angel One Ltd. (NSE:ANGELONE)
-  Score   : 27.6/100  |  Sector: Capital Market Broking
-  CMP     : Rs295.00
-  TRIGGER : Rs301.40  <- Buy above this
-  HARD SL : Rs295.37  (-2.0%)
-  TARGET 1: Rs305.02  (+1.2%)
-  TARGET 2: Rs308.93  (+2.5%)
-  Shares  : 331 @ Rs99,763 outlay
+#3 STANDBY RUNNER: APL Apollo Tubes Ltd. (NSE:APLAPOLLO)
+  Score   : 34.7/100  |  Sector: Steel Pipes & Tubes
+  CMP     : Rs2203.80
+  TRIGGER : Rs2207.10  <- Buy above this
+  HARD SL : Rs2162.96  (-2.0%)
+  TARGET 1: Rs2233.59  (+1.2%)
+  TARGET 2: Rs2262.28  (+2.5%)
+  Shares  : 45 @ Rs99,320 outlay
